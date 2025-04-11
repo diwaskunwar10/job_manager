@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { reducer, initialState, State, Action, TenantDetails } from '../types/dispatcherTypes';
 import { useNavigate } from 'react-router-dom';
+import { API_CONFIG } from '../config/environment';
+import { httpBase } from '../utils/httpBase';
 
 interface AppContextProps {
   state: State;
@@ -19,8 +21,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Load tenant data from localStorage on initial load
   useEffect(() => {
-    const tenantDetails = localStorage.getItem('tenantDetails');
-    const authToken = localStorage.getItem('authToken');
+    const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
+    const authToken = localStorage.getItem(API_CONFIG.AUTH_TOKEN_KEY);
     
     if (tenantDetails) {
       dispatch({ type: 'SET_TENANT', payload: JSON.parse(tenantDetails) });
@@ -39,15 +41,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       dispatch({ type: 'FETCH_START' });
       
-      const response = await fetch(
-        `https://36e2-2400-1a00-b030-7824-6a6c-791a-70da-9afe.ngrok-free.app/get_tenant_id?slug=${slug}`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Invalid tenant');
-      }
-      
-      const data = await response.json();
+      // Use the new API config and httpBase utility
+      const data = await httpBase.get(`/get_tenant_id?slug=${slug}`, undefined, dispatch);
       
       const tenantDetails: TenantDetails = {
         tenant_id: data.tenant_id,
@@ -56,9 +51,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       
       // Store tenant details in localStorage and context
-      localStorage.setItem('tenantDetails', JSON.stringify(tenantDetails));
+      localStorage.setItem(API_CONFIG.TENANT_DETAILS_KEY, JSON.stringify(tenantDetails));
       dispatch({ type: 'SET_TENANT', payload: tenantDetails });
-      dispatch({ type: 'FETCH_SUCCESS', payload: data });
       
       return true;
     } catch (error) {
@@ -80,12 +74,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // For demo purposes, we'll simulate a successful login
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store auth token
-      localStorage.setItem('authToken', 'dummy-auth-token');
+      // Store auth token with the new key name
+      localStorage.setItem(API_CONFIG.AUTH_TOKEN_KEY, 'dummy-auth-token');
       dispatch({ type: 'LOGIN_SUCCESS' });
       
       // Redirect to dashboard
-      const tenantDetails = localStorage.getItem('tenantDetails');
+      const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
       if (tenantDetails) {
         const tenant = JSON.parse(tenantDetails);
         navigate(`/${tenant.slug}/dashboard`);
@@ -102,12 +96,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Logout user
   const logoutUser = () => {
-    // Clear auth token
-    localStorage.removeItem('authToken');
+    // Clear auth token with the new key name
+    localStorage.removeItem(API_CONFIG.AUTH_TOKEN_KEY);
     dispatch({ type: 'LOGOUT' });
     
     // Redirect to login
-    const tenantDetails = localStorage.getItem('tenantDetails');
+    const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
     if (tenantDetails) {
       const tenant = JSON.parse(tenantDetails);
       navigate(`/${tenant.slug}/login`);

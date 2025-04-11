@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { dashboardService } from '@/services/dashboardService';
+import { API_CONFIG } from '@/config/environment';
 
 export interface DashboardData {
   roleData: Array<{ role: string; count: number }>;
@@ -25,7 +25,6 @@ export interface DashboardData {
   };
 }
 
-// Initial data for first render
 const initialRoleData = [
   { role: 'Agent', count: 45 },
   { role: 'Supervisor', count: 15 },
@@ -71,7 +70,6 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
     try {
       setIsLoading(true);
       
-      // Fetch all data in parallel
       const [
         rolesData, 
         agentsData, 
@@ -88,7 +86,6 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
         dashboardService.getJobsUnassignedCounts(dateRange.startDate, dateRange.endDate)
       ]);
       
-      // For demo purposes, console log the fetched data
       console.log("Fetched data:", { 
         rolesData, 
         agentsData, 
@@ -98,18 +95,6 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
         jobsUnassignedData
       });
       
-      // Uncommment below lines and remove the mock data in a real app
-      // setData({
-      //   roleData: rolesData,
-      //   agentData: agentsData,
-      //   supervisorData: supervisorsData,
-      //   jobsData: {
-      //     verified: jobsVerifiedData,
-      //     status: jobsStatusData,
-      //     unassigned: jobsUnassignedData
-      //   }
-      // });
-      
       toast({
         title: "Dashboard Updated",
         description: "Dashboard data has been refreshed."
@@ -117,15 +102,13 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       
-      // Check if error is authentication related (401)
       if (error instanceof Error && error.message.includes('401')) {
         toast({
           title: "Session Expired",
           description: "Your session has expired. Please login again.",
           variant: "destructive"
         });
-        // Clear auth token and redirect to login
-        localStorage.removeItem('authToken');
+        localStorage.removeItem(API_CONFIG.AUTH_TOKEN_KEY);
         navigate(`/${slug}/login`);
         return;
       }
@@ -140,7 +123,6 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
     }
   };
 
-  // Effect to fetch dashboard data when the component mounts or date range changes
   useEffect(() => {
     fetchDashboardData();
   }, [slug, dateRange]);

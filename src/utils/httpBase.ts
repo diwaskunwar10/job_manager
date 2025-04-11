@@ -1,13 +1,12 @@
+
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { Dispatch } from 'react';
 import { Action } from '../types/dispatcherTypes';
+import { API_CONFIG } from '../config/environment';
 
-// Base API URL
-export const API_BASE_URL = 'https://36e2-2400-1a00-b030-7824-6a6c-791a-70da-9afe.ngrok-free.app';
-
-// Create axios instance
+// Create axios instance using the environment configuration
 const httpClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_CONFIG.BASE_URL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -18,7 +17,7 @@ const httpClient: AxiosInstance = axios.create({
 httpClient.interceptors.request.use(
   (config) => {
     // Get tenant details from localStorage
-    const tenantDetails = localStorage.getItem('tenantDetails');
+    const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
     const tenant = tenantDetails ? JSON.parse(tenantDetails) : null;
 
     // Add tenant_id as a query param if available
@@ -30,7 +29,7 @@ httpClient.interceptors.request.use(
     }
 
     // Add authorization header if token exists
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem(API_CONFIG.AUTH_TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -51,10 +50,10 @@ httpClient.interceptors.response.use(
     // Handle auth errors
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Clear localStorage
-      localStorage.removeItem('authToken');
+      localStorage.removeItem(API_CONFIG.AUTH_TOKEN_KEY);
       
       // Get tenant slug
-      const tenantDetails = localStorage.getItem('tenantDetails');
+      const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
       const tenant = tenantDetails ? JSON.parse(tenantDetails) : null;
       
       if (tenant && tenant.slug) {
