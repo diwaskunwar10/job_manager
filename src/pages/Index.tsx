@@ -1,9 +1,10 @@
 
-import React, { useEffect } from 'react';
-import NotFoundPage from './NotFoundPage';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 const Index = () => {
-  return <NotFoundPage />;
+  // Direct redirect to 404 without using useEffect or useNavigate
+  return <Navigate to="/404" replace />;
 };
 
 export default Index;
