@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '@/hooks/use-toast';
+// Import httpBase removed as it's not used
+import { API_CONFIG } from '../config/environment';
+import axios from 'axios';
 
 const LoginPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -12,22 +15,22 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   useEffect(() => {
     // If tenant not loaded, redirect to tenant page
     if (!state.tenant) {
       navigate(`/${slug}`);
     }
-    
+
     // If already authenticated, redirect to dashboard
     if (state.isAuthenticated) {
       navigate(`/${slug}/dashboard`);
     }
   }, [slug, navigate, state.tenant, state.isAuthenticated]);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: "Validation Error",
@@ -36,15 +39,43 @@ const LoginPage: React.FC = () => {
       });
       return;
     }
-    
+
     try {
       setIsLoading(true);
+
+      // Store slug
+      localStorage.setItem('aroma_slug', slug || '');
+
+      // Make login API call with URLSearchParams
+      const response = await axios.post(
+        `${API_CONFIG.BASE_URL}/login`,
+        new URLSearchParams({
+          'grant_type': 'password',
+          'username': email,
+          'password': password,
+          'scope': '',
+          'client_id': slug || 'string' // Use slug as client_id if available
+        }),
+        {
+          headers: {
+            'accept': 'application/json'
+          }
+        }
+      );
+
+      // Store the auth token using the consistent key from API_CONFIG
+      localStorage.setItem(API_CONFIG.AUTH_TOKEN_KEY, response.data.access_token);
+
+      // Call loginUser to update state and handle navigation
       await loginUser(email, password);
-      
+
       toast({
         title: "Login Successful",
         description: "You have been logged in successfully.",
       });
+
+      // Navigate to dashboard
+      navigate(`/${slug}/dashboard`);
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -56,11 +87,11 @@ const LoginPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
+
   if (!state.tenant) {
     return null;  // Don't render until tenant is loaded
   }
-  
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <div className="flex flex-col justify-center flex-1 px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
@@ -86,7 +117,7 @@ const LoginPage: React.FC = () => {
                     <input
                       id="email"
                       name="email"
-                      type="email"
+                      type="text"
                       autoComplete="email"
                       required
                       value={email}

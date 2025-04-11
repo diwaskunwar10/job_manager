@@ -21,6 +21,10 @@ const AgentPerformance: React.FC<AgentPerformanceProps> = ({ data, isLoading }) 
           <div className="flex items-center justify-center h-full">
             <p>Loading chart data...</p>
           </div>
+        ) : data.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p>No agent performance data available</p>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.slice(0, 5)}>
