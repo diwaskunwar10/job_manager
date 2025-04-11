@@ -112,7 +112,9 @@ const NotFoundPage: React.FC = () => {
         </div>
       </div>
       
-      <style jsx>{`
+      {/* Replace the style jsx element with a style tag */}
+      <style>
+        {`
         .animate-blob {
           animation: blob 7s infinite;
         }
@@ -139,7 +141,8 @@ const NotFoundPage: React.FC = () => {
             transform: translate(0px, 0px) scale(1);
           }
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
