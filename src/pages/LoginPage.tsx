@@ -22,11 +22,11 @@ const LoginPage: React.FC = () => {
       navigate(`/${slug}`);
     }
 
-    // If already authenticated, redirect to dashboard
-    if (state.isAuthenticated) {
-      navigate(`/${slug}/dashboard`);
-    }
-  }, [slug, navigate, state.tenant, state.isAuthenticated]);
+    // Don't automatically redirect if already authenticated
+    // if (state.isAuthenticated) {
+    //   navigate(`/${slug}/dashboard`);
+    // }
+  }, [slug, navigate, state.tenant]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +74,7 @@ const LoginPage: React.FC = () => {
         description: "You have been logged in successfully.",
       });
 
-      // Navigate to dashboard
+      // Let the user decide where to go next
       navigate(`/${slug}/dashboard`);
     } catch (error) {
       console.error("Login error:", error);

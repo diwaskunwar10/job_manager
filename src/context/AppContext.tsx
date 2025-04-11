@@ -27,11 +27,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (tenantDetails) {
       dispatch({ type: 'SET_TENANT', payload: JSON.parse(tenantDetails) });
 
-      // If authenticated, redirect to dashboard
+      // If authenticated, set login success but don't redirect
       if (authToken) {
         dispatch({ type: 'LOGIN_SUCCESS' });
-        const tenant = JSON.parse(tenantDetails);
-        navigate(`/${tenant.slug}/dashboard`);
+        // Don't automatically redirect to dashboard
+        // const tenant = JSON.parse(tenantDetails);
+        // navigate(`/${tenant.slug}/dashboard`);
       }
     }
   }, [navigate]);
@@ -74,12 +75,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Set login success state
       dispatch({ type: 'LOGIN_SUCCESS' });
 
-      // Redirect to dashboard
-      const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
-      if (tenantDetails) {
-        const tenant = JSON.parse(tenantDetails);
-        navigate(`/${tenant.slug}/dashboard`);
-      }
+      // Don't automatically redirect to dashboard
+      // const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
+      // if (tenantDetails) {
+      //   const tenant = JSON.parse(tenantDetails);
+      //   navigate(`/${tenant.slug}/dashboard`);
+      // }
     } catch (error) {
       console.error("Login error:", error);
       dispatch({
