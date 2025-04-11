@@ -19,16 +19,16 @@ const Dashboard: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { state } = useAppContext();
   const navigate = useNavigate();
-  
+
   // Get yesterday and today for default date range
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
   const today = format(new Date(), 'yyyy-MM-dd');
-  
+
   const [dateRange, setDateRange] = useState({
     startDate: yesterday,
     endDate: today
   });
-  
+
   // Use the custom hook to fetch and manage dashboard data
   const {
     roleData,
@@ -38,29 +38,29 @@ const Dashboard: React.FC = () => {
     isLoading,
     fetchDashboardData
   } = useDashboardData(slug, dateRange);
-  
+
   // Handler for date range update button
   const handleDateRangeUpdate = () => {
     fetchDashboardData();
   };
-  
+
   // Redirect if tenant not loaded or not authenticated
   React.useEffect(() => {
     if (!state.tenant) {
       navigate(`/${slug}`);
       return;
     }
-    
+
     if (!state.isAuthenticated) {
       navigate(`/${slug}/login`);
       return;
     }
   }, [slug, navigate, state.tenant, state.isAuthenticated]);
-  
+
   if (!state.tenant) {
     return null; // Don't render until tenant is loaded
   }
-  
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -71,18 +71,18 @@ const Dashboard: React.FC = () => {
           setDateRange={setDateRange}
           onUpdate={handleDateRangeUpdate}
         />
-        
+
         {/* Dashboard content */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {/* User Role Distribution Chart */}
           <UserRoleDistribution data={roleData} isLoading={isLoading} />
-          
+
           {/* Agent Performance Chart */}
           <AgentPerformance data={agentData} isLoading={isLoading} />
-          
+
           {/* Job Status Overview */}
-          <JobStatusOverview jobsData={jobsData} />
-          
+          <JobStatusOverview jobsData={jobsData} isLoading={isLoading} />
+
           {/* Supervisor Assignments Table */}
           <SupervisorAssignments data={supervisorData} isLoading={isLoading} />
         </div>

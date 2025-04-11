@@ -21,6 +21,10 @@ const UserRoleDistribution: React.FC<UserRoleDistributionProps> = ({ data, isLoa
           <div className="flex items-center justify-center h-full">
             <p>Loading chart data...</p>
           </div>
+        ) : data.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p>No role data available</p>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>

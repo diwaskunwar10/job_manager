@@ -30,6 +30,10 @@ const SupervisorAssignments: React.FC<SupervisorAssignmentsProps> = ({ data, isL
               <tr>
                 <td colSpan={4} className="px-4 py-3 text-center">Loading data...</td>
               </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-3 text-center">No supervisor data available</td>
+              </tr>
             ) : (
               data.map((supervisor, index) => (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -42,9 +46,9 @@ const SupervisorAssignments: React.FC<SupervisorAssignmentsProps> = ({ data, isL
                     <div className="flex items-center">
                       <span className="mr-2">{supervisor.completion_rate}%</span>
                       <div className="w-20 h-2 bg-gray-200 rounded-full">
-                        <div 
-                          className="h-full bg-green-500 rounded-full" 
-                          style={{ width: `${supervisor.completion_rate}%` }} 
+                        <div
+                          className="h-full bg-green-500 rounded-full"
+                          style={{ width: `${supervisor.completion_rate}%` }}
                         />
                       </div>
                     </div>

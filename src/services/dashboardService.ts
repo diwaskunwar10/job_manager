@@ -40,7 +40,7 @@ export interface JobsUnassignedCount {
 // Dashboard Services
 export const dashboardService = {
   getUserRolesCount: async (
-    startDate: string, 
+    startDate: string,
     endDate: string,
     dispatch?: Dispatch<Action>
   ): Promise<UserRoleCount[]> => {
@@ -50,9 +50,9 @@ export const dashboardService = {
       dispatch
     );
   },
-  
+
   getAgentPerformance: async (
-    startDate: string, 
+    startDate: string,
     endDate: string,
     dispatch?: Dispatch<Action>
   ): Promise<AgentPerformance[]> => {
@@ -62,9 +62,9 @@ export const dashboardService = {
       dispatch
     );
   },
-  
+
   getSupervisorAssignments: async (
-    startDate: string, 
+    startDate: string,
     endDate: string,
     dispatch?: Dispatch<Action>
   ): Promise<SupervisorAssignment[]> => {
@@ -74,9 +74,9 @@ export const dashboardService = {
       dispatch
     );
   },
-  
+
   getJobsVerifiedCounts: async (
-    startDate: string, 
+    startDate: string,
     endDate: string,
     dispatch?: Dispatch<Action>
   ): Promise<JobsVerifiedCount> => {
@@ -86,9 +86,9 @@ export const dashboardService = {
       dispatch
     );
   },
-  
+
   getJobsStatusCounts: async (
-    startDate: string, 
+    startDate: string,
     endDate: string,
     dispatch?: Dispatch<Action>
   ): Promise<JobsStatusCount> => {
@@ -98,9 +98,9 @@ export const dashboardService = {
       dispatch
     );
   },
-  
+
   getJobsUnassignedCounts: async (
-    startDate: string, 
+    startDate: string,
     endDate: string,
     dispatch?: Dispatch<Action>
   ): Promise<JobsUnassignedCount> => {
