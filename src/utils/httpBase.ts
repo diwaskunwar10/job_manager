@@ -1,4 +1,3 @@
-
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { Dispatch } from 'react';
 import { Action } from '../types/dispatcherTypes';
@@ -59,11 +58,9 @@ httpClient.interceptors.response.use(
       const tenant = tenantDetails ? JSON.parse(tenantDetails) : null;
       
       if (tenant && tenant.slug) {
-        // Redirect to login
-        window.location.href = `/${tenant.slug}/login`;
-      } else {
-        // Redirect to 404 if no tenant info
-        window.location.href = '/404';
+        // Create an error with a special message that can be detected
+        const authError = new Error(`401: Unauthorized - Session expired`);
+        return Promise.reject(authError);
       }
     }
     

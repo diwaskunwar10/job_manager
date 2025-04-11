@@ -23,6 +23,20 @@ export interface SupervisorAssignment {
   completion_rate: number;
 }
 
+export interface JobsVerifiedCount {
+  count: number;
+}
+
+export interface JobsStatusCount {
+  completed: number;
+  inProgress: number;
+  pending: number;
+}
+
+export interface JobsUnassignedCount {
+  count: number;
+}
+
 // Dashboard Services
 export const dashboardService = {
   getUserRolesCount: async (
@@ -56,6 +70,42 @@ export const dashboardService = {
   ): Promise<SupervisorAssignment[]> => {
     return httpBase.get<SupervisorAssignment[]>(
       `/supervisors/assignments?start_date=${startDate}&end_date=${endDate}`,
+      undefined,
+      dispatch
+    );
+  },
+  
+  getJobsVerifiedCounts: async (
+    startDate: string, 
+    endDate: string,
+    dispatch?: Dispatch<Action>
+  ): Promise<JobsVerifiedCount> => {
+    return httpBase.get<JobsVerifiedCount>(
+      `/jobs/verified/counts?start_date=${startDate}&end_date=${endDate}`,
+      undefined,
+      dispatch
+    );
+  },
+  
+  getJobsStatusCounts: async (
+    startDate: string, 
+    endDate: string,
+    dispatch?: Dispatch<Action>
+  ): Promise<JobsStatusCount> => {
+    return httpBase.get<JobsStatusCount>(
+      `/jobs/status/count?start_date=${startDate}&end_date=${endDate}`,
+      undefined,
+      dispatch
+    );
+  },
+  
+  getJobsUnassignedCounts: async (
+    startDate: string, 
+    endDate: string,
+    dispatch?: Dispatch<Action>
+  ): Promise<JobsUnassignedCount> => {
+    return httpBase.get<JobsUnassignedCount>(
+      `/jobs/unassigned/count?start_date=${startDate}&end_date=${endDate}`,
       undefined,
       dispatch
     );

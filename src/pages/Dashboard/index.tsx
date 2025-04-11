@@ -6,6 +6,7 @@ import MainLayout from '../../components/Layout/MainLayout';
 import { dashboardService } from '../../services/dashboardService';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { format, subDays } from 'date-fns';
 
 // Mock data for initial render (will be replaced by real data)
 const initialRoleData = [
@@ -29,6 +30,13 @@ const initialSupervisorData = [
   { supervisor_name: 'Lisa Brown', team_size: 8, active_projects: 3, completion_rate: 95 },
 ];
 
+// Initial job status data
+const initialJobsData = {
+  verified: { count: 45 },
+  status: { completed: 20, inProgress: 15, pending: 10 },
+  unassigned: { count: 8 }
+};
+
 // Colors for pie chart
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -37,15 +45,21 @@ const Dashboard: React.FC = () => {
   const { state } = useAppContext();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Get yesterday and today for default date range
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+  const today = format(new Date(), 'yyyy-MM-dd');
+  
   const [dateRange, setDateRange] = useState({
-    startDate: '2025-04-04',
-    endDate: '2025-04-11'
+    startDate: yesterday,
+    endDate: today
   });
   
   // Data states
   const [roleData, setRoleData] = useState(initialRoleData);
   const [agentData, setAgentData] = useState(initialAgentData);
   const [supervisorData, setSupervisorData] = useState(initialSupervisorData);
+  const [jobsData, setJobsData] = useState(initialJobsData);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -65,20 +79,42 @@ const Dashboard: React.FC = () => {
         setIsLoading(true);
         
         // Fetch all data in parallel
-        const [rolesData, agentsData, supervisorsData] = await Promise.all([
+        const [
+          rolesData, 
+          agentsData, 
+          supervisorsData,
+          jobsVerifiedData,
+          jobsStatusData,
+          jobsUnassignedData
+        ] = await Promise.all([
           dashboardService.getUserRolesCount(dateRange.startDate, dateRange.endDate),
           dashboardService.getAgentPerformance(dateRange.startDate, dateRange.endDate),
-          dashboardService.getSupervisorAssignments(dateRange.startDate, dateRange.endDate)
+          dashboardService.getSupervisorAssignments(dateRange.startDate, dateRange.endDate),
+          dashboardService.getJobsVerifiedCounts(dateRange.startDate, dateRange.endDate),
+          dashboardService.getJobsStatusCounts(dateRange.startDate, dateRange.endDate),
+          dashboardService.getJobsUnassignedCounts(dateRange.startDate, dateRange.endDate)
         ]);
         
         // For demo purposes, we're using mock data as the API endpoint is not real
         // In a real app, you would use the fetched data directly
-        console.log("Fetched data:", { rolesData, agentsData, supervisorsData });
+        console.log("Fetched data:", { 
+          rolesData, 
+          agentsData, 
+          supervisorsData, 
+          jobsVerifiedData,
+          jobsStatusData,
+          jobsUnassignedData
+        });
         
         // Uncommment below lines and remove the mock data in a real app
         // setRoleData(rolesData);
         // setAgentData(agentsData);
         // setSupervisorData(supervisorsData);
+        // setJobsData({
+        //   verified: jobsVerifiedData,
+        //   status: jobsStatusData,
+        //   unassigned: jobsUnassignedData
+        // });
         
         toast({
           title: "Dashboard Updated",
@@ -86,6 +122,20 @@ const Dashboard: React.FC = () => {
         });
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        
+        // Check if error is authentication related (401)
+        if (error instanceof Error && error.message.includes('401')) {
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please login again.",
+            variant: "destructive"
+          });
+          // Clear auth token and redirect to login
+          localStorage.removeItem('authToken');
+          navigate(`/${slug}/login`);
+          return;
+        }
+        
         toast({
           title: "Data Fetch Error",
           description: "Failed to load dashboard data. Using cached data.",
@@ -98,6 +148,11 @@ const Dashboard: React.FC = () => {
     
     fetchDashboardData();
   }, [slug, navigate, state.tenant, state.isAuthenticated, dateRange, toast]);
+  
+  const handleDateRangeUpdate = () => {
+    // This will trigger the useEffect to fetch updated data with the new date range
+    setIsLoading(true);
+  };
   
   if (!state.tenant) {
     return null; // Don't render until tenant is loaded
@@ -129,7 +184,7 @@ const Dashboard: React.FC = () => {
               className="px-3 py-2 border border-gray-300 rounded-md text-sm"
             />
             <button
-              onClick={() => console.log("Update date range")}
+              onClick={handleDateRangeUpdate}
               className="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-md hover:bg-brand-700"
             >
               Update
@@ -194,6 +249,53 @@ const Dashboard: React.FC = () => {
                   </BarChart>
                 </ResponsiveContainer>
               )}
+            </div>
+          </div>
+          
+          {/* Job Status Overview */}
+          <div className="p-6 bg-white rounded-lg shadow-md">
+            <h2 className="mb-4 text-lg font-medium text-gray-900">Job Status Overview</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Verified Jobs</p>
+                <p className="text-2xl font-bold">{jobsData.verified.count}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Job Status</p>
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <div className="flex justify-between text-sm">
+                      <span>Completed</span>
+                      <span className="font-medium">{jobsData.status.completed}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
+                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${(jobsData.status.completed / (jobsData.status.completed + jobsData.status.inProgress + jobsData.status.pending)) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm">
+                      <span>In Progress</span>
+                      <span className="font-medium">{jobsData.status.inProgress}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${(jobsData.status.inProgress / (jobsData.status.completed + jobsData.status.inProgress + jobsData.status.pending)) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm">
+                      <span>Pending</span>
+                      <span className="font-medium">{jobsData.status.pending}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(jobsData.status.pending / (jobsData.status.completed + jobsData.status.inProgress + jobsData.status.pending)) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Unassigned Jobs</p>
+                <p className="text-2xl font-bold">{jobsData.unassigned.count}</p>
+              </div>
             </div>
           </div>
           

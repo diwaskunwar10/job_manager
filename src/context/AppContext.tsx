@@ -24,12 +24,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     if (tenantDetails) {
       dispatch({ type: 'SET_TENANT', payload: JSON.parse(tenantDetails) });
+      
+      // If authenticated, redirect to dashboard
+      if (authToken) {
+        dispatch({ type: 'LOGIN_SUCCESS' });
+        const tenant = JSON.parse(tenantDetails);
+        navigate(`/${tenant.slug}/dashboard`);
+      }
     }
-    
-    if (authToken) {
-      dispatch({ type: 'LOGIN_SUCCESS' });
-    }
-  }, []);
+  }, [navigate]);
 
   // Check if tenant exists
   const checkTenantExists = async (slug: string): Promise<boolean> => {
@@ -48,7 +51,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       const tenantDetails: TenantDetails = {
         tenant_id: data.tenant_id,
-        name: data.name,
+        name: data.tenant_name || slug, // Use tenant_name from response or fallback to slug
         slug: slug
       };
       
