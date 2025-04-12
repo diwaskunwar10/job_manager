@@ -3,7 +3,8 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { reducer, initialState, State, Action, TenantDetails } from '../types/dispatcherTypes';
 import { useNavigate } from 'react-router-dom';
 import { API_CONFIG } from '../config/environment';
-import { httpBase } from '../utils/httpBase';
+import apiRequest from '../utils/httpClient';
+import { TENANTS } from '../constants/apiEndpoints';
 
 interface AppContextProps {
   state: State;
@@ -30,9 +31,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // If authenticated, set login success but don't redirect
       if (authToken) {
         dispatch({ type: 'LOGIN_SUCCESS' });
-        // Don't automatically redirect to dashboard
-        // const tenant = JSON.parse(tenantDetails);
-        // navigate(`/${tenant.slug}/dashboard`);
       }
     }
   }, [navigate]);
@@ -42,45 +40,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       dispatch({ type: 'FETCH_START' });
 
-      // Use the new API config and httpBase utility
-      const data = await httpBase.get(`/get_tenant_id?slug=${slug}`, undefined, dispatch);
+      const data = await apiRequest({
+        url: TENANTS.GET_TENANT_ID,
+        method: 'GET',
+        params: { slug },
+        callbacks: {
+          successCallback: (response) => {
+            const tenantDetails: TenantDetails = {
+              tenant_id: response.tenant_id,
+              name: response.tenant_name || slug,
+              slug: slug
+            };
 
-      const tenantDetails: TenantDetails = {
-        tenant_id: data.tenant_id,
-        name: data.tenant_name || slug, // Use tenant_name from response or fallback to slug
-        slug: slug
-      };
-
-      // Store tenant details in localStorage and context
-      localStorage.setItem(API_CONFIG.TENANT_DETAILS_KEY, JSON.stringify(tenantDetails));
-      dispatch({ type: 'SET_TENANT', payload: tenantDetails });
+            // Store tenant details in localStorage and context
+            localStorage.setItem(API_CONFIG.TENANT_DETAILS_KEY, JSON.stringify(tenantDetails));
+            dispatch({ type: 'SET_TENANT', payload: tenantDetails });
+          },
+          failureCallback: (error) => {
+            console.error("Error fetching tenant:", error);
+            dispatch({
+              type: 'FETCH_ERROR',
+              payload: error instanceof Error ? error.message : 'Failed to fetch tenant'
+            });
+          }
+        }
+      });
 
       return true;
     } catch (error) {
       console.error("Error fetching tenant:", error);
-      dispatch({
-        type: 'FETCH_ERROR',
-        payload: error instanceof Error ? error.message : 'Failed to fetch tenant'
-      });
       return false;
     }
   };
 
-  // Login user - this method is now only used for state management
-  // The actual token is set in LoginPage.tsx
+  // Login user
   const loginUser = async (email: string, password: string): Promise<void> => {
     try {
       dispatch({ type: 'FETCH_START' });
-
-      // Set login success state
       dispatch({ type: 'LOGIN_SUCCESS' });
-
-      // Don't automatically redirect to dashboard
-      // const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
-      // if (tenantDetails) {
-      //   const tenant = JSON.parse(tenantDetails);
-      //   navigate(`/${tenant.slug}/dashboard`);
-      // }
     } catch (error) {
       console.error("Login error:", error);
       dispatch({
@@ -93,8 +90,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Logout user
   const logoutUser = () => {
-    // Do not remove the auth token as requested
-    // Just update the state and redirect
     dispatch({ type: 'LOGOUT' });
 
     // Redirect to login

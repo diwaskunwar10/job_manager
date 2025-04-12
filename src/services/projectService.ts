@@ -1,6 +1,6 @@
-import { httpBase } from '../utils/httpBase';
-import { Dispatch } from 'react';
-import { Action } from '../types/dispatcherTypes';
+
+import apiRequest, { ApiCallbacks } from '../utils/httpClient';
+import { PROJECTS, JOBS } from '../constants/apiEndpoints';
 
 export interface Project {
   _id: string;
@@ -22,7 +22,6 @@ export interface ProjectDetail {
   _id: string;
   name: string;
   description: string;
-  // Add more fields as needed for project details
   status?: string;
   startDate?: string;
   endDate?: string;
@@ -55,34 +54,37 @@ export interface JobsResponse {
 // Project Services
 export const projectService = {
   // Get projects with pagination
-  getProjects: async (
+  getProjects: (
     page: number = 1,
     pageSize: number = 10,
-    dispatch?: Dispatch<Action>
-  ): Promise<ProjectsResponse> => {
-    return httpBase.get<ProjectsResponse>(
-      `/get_projects?page=${page}&page_size=${pageSize}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: PROJECTS.GET_PROJECTS,
+      method: 'GET',
+      params: {
+        page,
+        page_size: pageSize
+      },
+      callbacks
+    });
   },
 
-  // Get project details by ID (DEPRECATED - use project from list instead)
-  // This method is kept for backward compatibility
-  getProjectById: async (
+  // Get project details by ID (DEPRECATED)
+  getProjectById: (
     projectId: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<ProjectDetail> => {
+    callbacks?: ApiCallbacks
+  ) => {
     console.warn('getProjectById is deprecated. Use project from list instead.');
-    return httpBase.get<ProjectDetail>(
-      `/projects/${projectId}`,
-      undefined,
-      dispatch
-    );
+    return apiRequest({
+      url: PROJECTS.PROJECT_BY_ID(projectId),
+      method: 'GET',
+      callbacks
+    });
   },
 
   // Get jobs by project ID with filtering and pagination
-  getJobsByProject: async (
+  getJobsByProject: (
     projectId: string,
     options?: {
       jobStatus?: 'pending' | 'failed' | 'completed' | 'in-progress';
@@ -91,8 +93,8 @@ export const projectService = {
       page?: number;
       pageSize?: number;
     },
-    dispatch?: Dispatch<Action>
-  ): Promise<JobsResponse> => {
+    callbacks?: ApiCallbacks
+  ) => {
     const {
       jobStatus,
       verified,
@@ -101,65 +103,57 @@ export const projectService = {
       pageSize = 10
     } = options || {};
 
-    // Build query parameters
-    console.log(`Building query params with page=${page}, pageSize=${pageSize}`);
-    let queryParams = `page=${page}&page_size=${pageSize}`;
-
-    if (jobStatus) {
-      queryParams += `&job_status=${jobStatus}`;
-    }
-
-    if (verified !== undefined) {
-      queryParams += `&verified=${verified}`;
-    }
-
-    if (searchQuery) {
-      queryParams += `&search_query=${encodeURIComponent(searchQuery)}`;
-    }
-
-    return httpBase.get<JobsResponse>(
-      `/jobs/${projectId}?${queryParams}`,
-      undefined,
-      dispatch
-    );
+    return apiRequest({
+      url: JOBS.JOBS_BY_PROJECT(projectId),
+      method: 'GET',
+      params: {
+        page,
+        page_size: pageSize,
+        ...(jobStatus && { job_status: jobStatus }),
+        ...(verified !== undefined && { verified }),
+        ...(searchQuery && { search_query: searchQuery })
+      },
+      callbacks
+    });
   },
 
   // Execute a job
-  executeJob: async (
+  executeJob: (
     jobId: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<void> => {
-    return httpBase.post<void>(
-      `/jobs/${jobId}/execute`,
-      {},
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.EXECUTE_JOB(jobId),
+      method: 'POST',
+      callbacks
+    });
   },
 
   // Re-execute a job
-  reExecuteJob: async (
+  reExecuteJob: (
     jobId: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<void> => {
-    return httpBase.post<void>(
-      `/jobs/${jobId}/reexecute`,
-      {},
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.RE_EXECUTE_JOB(jobId),
+      method: 'POST',
+      callbacks
+    });
   },
 
   // Get job output
-  getJobOutput: async (
+  getJobOutput: (
     jobId: string,
     jobIndex: number = 0,
-    dispatch?: Dispatch<Action>
-  ): Promise<{ data: { putput: string; input: string }; total_jobs: number }> => {
-    return httpBase.get<{ data: { putput: string; input: string }; total_jobs: number }>(
-      `/job_output/${jobId}?job_index=${jobIndex}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.JOB_OUTPUT(jobId),
+      method: 'GET',
+      params: {
+        job_index: jobIndex
+      },
+      callbacks
+    });
   }
 };

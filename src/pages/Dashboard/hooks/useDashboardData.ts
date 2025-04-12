@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +25,7 @@ export interface DashboardData {
   };
 }
 
-// Initialize with empty data structures instead of dummy data
+// Initialize with empty data structures
 const initialRoleData: Array<{ role: string; count: number }> = [];
 const initialAgentData: Array<{
   agent_name: string;
@@ -59,70 +60,111 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
   const fetchDashboardData = async () => {
     if (!slug) return;
 
+    setIsLoading(true);
+    
+    // Create a function to handle common data setting logic
+    const fetchDataWithCallbacks = (
+      fetcher: (
+        startDate: string, 
+        endDate: string, 
+        callbacks: any
+      ) => Promise<any>,
+      dataKey: keyof DashboardData,
+      dataMapper: (responseData: any) => any
+    ) => {
+      return fetcher(
+        dateRange.startDate, 
+        dateRange.endDate, 
+        {
+          successCallback: (responseData: any) => {
+            setData(prevData => ({
+              ...prevData,
+              [dataKey]: dataMapper(responseData)
+            }));
+          },
+          failureCallback: (error: any) => {
+            console.error(`Error fetching ${dataKey}:`, error);
+            
+            if (error instanceof Error && error.message.includes('401')) {
+              toast({
+                title: "Session Expired",
+                description: "Your session has expired. Please login again.",
+                variant: "destructive"
+              });
+            }
+          }
+        }
+      );
+    };
+
     try {
-      setIsLoading(true);
-
-      // Fetch data from individual endpoints
-      const [
-        rolesData,
-        agentsData,
-        supervisorsData,
-        jobsVerifiedData,
-        jobsStatusData,
-        jobsUnassignedData
-      ] = await Promise.all([
-        dashboardService.getUserRolesCount(dateRange.startDate, dateRange.endDate),
-        dashboardService.getAgentPerformance(dateRange.startDate, dateRange.endDate),
-        dashboardService.getSupervisorAssignments(dateRange.startDate, dateRange.endDate),
-        dashboardService.getJobsVerifiedCounts(dateRange.startDate, dateRange.endDate),
-        dashboardService.getJobsStatusCounts(dateRange.startDate, dateRange.endDate),
-        dashboardService.getJobsUnassignedCounts(dateRange.startDate, dateRange.endDate)
-      ]);
-
-      console.log("Fetched data:", {
-        rolesData,
-        agentsData,
-        supervisorsData,
-        jobsVerifiedData,
-        jobsStatusData,
-        jobsUnassignedData
-      });
-
-      // Update the state with the new data
-      setData({
-        // Map role data
-        roleData: Array.isArray(rolesData) ? rolesData.map(role => ({
+      // Fetch roles data
+      fetchDataWithCallbacks(
+        dashboardService.getUserRolesCount,
+        'roleData',
+        (responseData) => Array.isArray(responseData) ? responseData.map(role => ({
           role: role.role,
           count: role.count
-        })) : [],
+        })) : []
+      );
 
-        // Map agent data
-        agentData: Array.isArray(agentsData) ? agentsData.map(agent => ({
+      // Fetch agent data
+      fetchDataWithCallbacks(
+        dashboardService.getAgentPerformance,
+        'agentData',
+        (responseData) => Array.isArray(responseData) ? responseData.map(agent => ({
           agent_name: agent.agent_name,
           calls_handled: agent.calls_handled || 0,
           average_handling_time: agent.average_handling_time || 0,
           satisfaction_score: agent.satisfaction_score || 0
-        })) : [],
+        })) : []
+      );
 
-        // Map supervisor data
-        supervisorData: Array.isArray(supervisorsData) ? supervisorsData.map(supervisor => ({
+      // Fetch supervisor data
+      fetchDataWithCallbacks(
+        dashboardService.getSupervisorAssignments,
+        'supervisorData',
+        (responseData) => Array.isArray(responseData) ? responseData.map(supervisor => ({
           supervisor_name: supervisor.supervisor_name,
           team_size: supervisor.team_size || 0,
           active_projects: supervisor.active_projects || 0,
           completion_rate: supervisor.completion_rate || 0
-        })) : [],
+        })) : []
+      );
 
-        // Map jobs data
-        jobsData: {
-          verified: { count: jobsVerifiedData?.count || 0 },
+      // Fetch jobs verified count
+      fetchDataWithCallbacks(
+        dashboardService.getJobsVerifiedCounts,
+        'jobsData',
+        (responseData) => ({
+          ...data.jobsData,
+          verified: { count: responseData?.count || 0 }
+        })
+      );
+
+      // Fetch jobs status count
+      fetchDataWithCallbacks(
+        dashboardService.getJobsStatusCounts,
+        'jobsData',
+        (responseData) => ({
+          ...data.jobsData,
           status: {
-            completed: jobsStatusData?.completed || 0,
-            inProgress: jobsStatusData?.inProgress || 0,
-            pending: jobsStatusData?.pending || 0
-          },
-          unassigned: { count: jobsUnassignedData?.count || 0 }
-        }
-      });
+            completed: responseData?.completed || 0,
+            inProgress: responseData?.inProgress || 0,
+            pending: responseData?.pending || 0
+          }
+        })
+      );
+
+      // Fetch jobs unassigned count
+      fetchDataWithCallbacks(
+        dashboardService.getJobsUnassignedCounts,
+        'jobsData',
+        (responseData) => ({
+          ...data.jobsData,
+          unassigned: { count: responseData?.count || 0 }
+        })
+      );
 
       toast({
         title: "Dashboard Updated",
@@ -130,18 +172,7 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-
-      if (error instanceof Error && error.message.includes('401')) {
-        toast({
-          title: "Session Expired",
-          description: "Your session has expired. Please login again.",
-          variant: "destructive"
-        });
-        // Don't redirect, just show the error
-        // navigate(`/${slug}/login`);
-        // return;
-      }
-
+      
       toast({
         title: "Data Fetch Error",
         description: "Failed to load dashboard data.",

@@ -1,7 +1,6 @@
 
-import { httpBase } from '../utils/httpBase';
-import { Dispatch } from 'react';
-import { Action } from '../types/dispatcherTypes';
+import apiRequest, { ApiCallbacks } from '../utils/httpClient';
+import { USERS, AGENTS, SUPERVISORS, JOBS } from '../constants/apiEndpoints';
 
 export interface UserRoleCount {
   role: string;
@@ -39,75 +38,99 @@ export interface JobsUnassignedCount {
 
 // Dashboard Services
 export const dashboardService = {
-  getUserRolesCount: async (
+  getUserRolesCount: (
     startDate: string,
     endDate: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<UserRoleCount[]> => {
-    return httpBase.get<UserRoleCount[]>(
-      `/users/roles/count?start_date=${startDate}&end_date=${endDate}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: USERS.ROLES_COUNT,
+      method: 'GET',
+      params: {
+        start_date: startDate,
+        end_date: endDate
+      },
+      callbacks
+    });
   },
 
-  getAgentPerformance: async (
+  getAgentPerformance: (
     startDate: string,
     endDate: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<AgentPerformance[]> => {
-    return httpBase.get<AgentPerformance[]>(
-      `/agents/performance?start_date=${startDate}&end_date=${endDate}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: AGENTS.PERFORMANCE,
+      method: 'GET',
+      params: {
+        start_date: startDate,
+        end_date: endDate
+      },
+      callbacks
+    });
   },
 
-  getSupervisorAssignments: async (
+  getSupervisorAssignments: (
     startDate: string,
     endDate: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<SupervisorAssignment[]> => {
-    return httpBase.get<SupervisorAssignment[]>(
-      `/supervisors/assignments?start_date=${startDate}&end_date=${endDate}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: SUPERVISORS.ASSIGNMENTS,
+      method: 'GET',
+      params: {
+        start_date: startDate,
+        end_date: endDate
+      },
+      callbacks
+    });
   },
 
-  getJobsVerifiedCounts: async (
+  getJobsVerifiedCounts: (
     startDate: string,
     endDate: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<JobsVerifiedCount> => {
-    return httpBase.get<JobsVerifiedCount>(
-      `/jobs/verified/counts?start_date=${startDate}&end_date=${endDate}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.JOBS_VERIFIED_COUNT,
+      method: 'GET',
+      params: {
+        start_date: startDate,
+        end_date: endDate
+      },
+      callbacks
+    });
   },
 
-  getJobsStatusCounts: async (
+  getJobsStatusCounts: (
     startDate: string,
     endDate: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<JobsStatusCount> => {
-    return httpBase.get<JobsStatusCount>(
-      `/jobs/status/count?start_date=${startDate}&end_date=${endDate}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.JOBS_STATUS_COUNT,
+      method: 'GET',
+      params: {
+        start_date: startDate,
+        end_date: endDate
+      },
+      callbacks
+    });
   },
 
-  getJobsUnassignedCounts: async (
+  getJobsUnassignedCounts: (
     startDate: string,
     endDate: string,
-    dispatch?: Dispatch<Action>
-  ): Promise<JobsUnassignedCount> => {
-    return httpBase.get<JobsUnassignedCount>(
-      `/jobs/unassigned/count?start_date=${startDate}&end_date=${endDate}`,
-      undefined,
-      dispatch
-    );
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.JOBS_UNASSIGNED_COUNT,
+      method: 'GET',
+      params: {
+        start_date: startDate,
+        end_date: endDate
+      },
+      callbacks
+    });
   }
 };
