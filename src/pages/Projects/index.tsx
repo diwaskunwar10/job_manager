@@ -25,13 +25,13 @@ const ProjectsPage: React.FC = () => {
 
   // State to track selected project
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  
+
   // Filter state
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  
+
   // Animation for search placeholder
   const [placeholder, setPlaceholder] = useState('');
   const fullPlaceholder = "Search projects...";
@@ -97,7 +97,7 @@ const ProjectsPage: React.FC = () => {
 
   // Apply filters
   const applyFilters = () => {
-    // In a real implementation, we would pass these filters to the fetchProjects call
+    // Explicitly call fetchProjects when filters are applied
     fetchProjects();
   };
 
@@ -106,6 +106,7 @@ const ProjectsPage: React.FC = () => {
     setSearchTerm('');
     setStartDate(undefined);
     setEndDate(undefined);
+    // Explicitly call fetchProjects when filters are reset
     fetchProjects();
   };
 
@@ -116,10 +117,8 @@ const ProjectsPage: React.FC = () => {
     }
   }, [selectedProjectId, fetchProjectDetail]);
 
-  // Fetch projects when page changes
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+  // We don't need this effect anymore as fetchProjects is called in the hook
+  // and will be called explicitly when filters change
 
   // Only redirect if tenant not loaded, but allow unauthenticated users to view projects
   useEffect(() => {
@@ -159,7 +158,7 @@ const ProjectsPage: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                
+
                 <Button
                   variant="outline"
                   size="icon"
@@ -168,7 +167,7 @@ const ProjectsPage: React.FC = () => {
                 >
                   <ArrowUpDown className="h-4 w-4" />
                 </Button>
-                
+
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="default" size="sm">
@@ -187,7 +186,7 @@ const ProjectsPage: React.FC = () => {
                   </DialogContent>
                 </Dialog>
               </div>
-              
+
               <div className="flex space-x-2">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -205,7 +204,7 @@ const ProjectsPage: React.FC = () => {
                     />
                   </PopoverContent>
                 </Popover>
-                
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="text-xs">
@@ -222,19 +221,19 @@ const ProjectsPage: React.FC = () => {
                     />
                   </PopoverContent>
                 </Popover>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="text-xs"
                   onClick={applyFilters}
                 >
                   Apply
                 </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="text-xs"
                   onClick={resetFilters}
                 >
@@ -242,7 +241,7 @@ const ProjectsPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-            
+
             <ProjectList
               projects={projects}
               isLoading={isLoading}
@@ -255,7 +254,7 @@ const ProjectsPage: React.FC = () => {
               onPageSizeChange={handlePageSizeChange}
             />
           </div>
-          
+
           {/* Project Detail - Right Side */}
           <div className="w-full md:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
             <ProjectDetail

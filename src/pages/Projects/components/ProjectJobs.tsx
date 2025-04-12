@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Job, projectService } from '@/services/projectService';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { JobsFilter } from '../hooks/useProjectJobs';
 import { format } from 'date-fns';
-import { Loader2, Play, RefreshCw, ChevronsLeft, ChevronsRight, FileText } from 'lucide-react';
+import { Loader2, Play, RefreshCw, ChevronsLeft, ChevronsRight, FileText, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Pagination,
@@ -33,9 +33,11 @@ interface ProjectJobsProps {
     total: number;
     page: number;
     page_size: number;
+    projectId?: string;
   };
   onFilterChange: (filter: Partial<JobsFilter>) => void;
   pageSizeOptions?: number[];
+  projectId?: string; // Add projectId prop
 }
 
 const ProjectJobs: React.FC<ProjectJobsProps> = ({
@@ -44,7 +46,8 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
   filter,
   meta,
   onFilterChange,
-  pageSizeOptions = [5, 10, 20, 50]
+  pageSizeOptions = [5, 10, 20, 50],
+  projectId
 }) => {
   const { toast } = useToast();
 
@@ -57,6 +60,8 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
   const [totalJobs, setTotalJobs] = useState<number>(0);
   const [currentJobIndex, setCurrentJobIndex] = useState<number>(0);
   const [isLoadingOutput, setIsLoadingOutput] = useState(false);
+
+  // State for job management
   // Handle execute job
   const handleExecuteJob = (jobId: string) => {
     console.log(`Executing job: ${jobId}`);
@@ -336,6 +341,15 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
 
   // Safely check if jobs is an array
   const hasJobs = Array.isArray(jobs) && jobs.length > 0;
+
+  // Check if projectId is available
+  if (!projectId && !meta.projectId) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <p>No project selected. Please select a project to view jobs.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">

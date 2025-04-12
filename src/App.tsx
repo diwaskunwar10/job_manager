@@ -14,7 +14,8 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ProjectsPage = lazy(() => import("./pages/Projects"));
 const JobsPage = lazy(() => import("./pages/Jobs"));
-const JobOutputPage = lazy(() => import("./pages/Jobs/components/JobOutputPage"));
+const UserManagementPage = lazy(() => import("./pages/UserManagement"));
+// const JobOutputPage = lazy(() => import("./pages/Jobs/components/JobOutputPage"));
 
 // Loading fallback
 const PageLoader = () => (
@@ -54,7 +55,7 @@ const App = () => (
               <Route path="/:slug/projects" element={<ProjectsPage />} />
               <Route path="/:slug/projects/:projectId" element={<ProjectsPage />} />
               <Route path="/:slug/jobs" element={<JobsPage />} />
-              <Route path="/:slug/projects/:projectId/jobs/:jobId/output" element={<JobOutputPage />} />
+              <Route path="/:slug/users" element={<UserManagementPage />} />
 
               {/* 404 page */}
               <Route path="/404" element={<NotFoundPage />} />

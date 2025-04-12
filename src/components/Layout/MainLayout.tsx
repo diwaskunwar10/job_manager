@@ -9,12 +9,12 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
-  
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Navbar />
-      
-      <main className="flex-1 overflow-auto lg:ml-64">
+
+      <main className="flex-1 overflow-auto lg:ml-56">
         <div className="p-4 md:p-6 lg:p-8 min-h-screen">
           <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
             <div className="animate-fade-in">
