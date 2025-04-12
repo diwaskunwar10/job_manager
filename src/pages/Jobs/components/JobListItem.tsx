@@ -2,6 +2,9 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
+import { useAppContext } from '@/context/AppContext';
 
 interface Job {
   _id: string;
@@ -9,6 +12,7 @@ interface Job {
   name: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
   project_name: string;
+  project_id: string;
   created_at: string;
 }
 
@@ -19,6 +23,10 @@ interface JobListItemProps {
 }
 
 const JobListItem: React.FC<JobListItemProps> = ({ job, isSelected, onSelect }) => {
+  const { state } = useAppContext();
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  
   // Format the date in a more readable way
   const formatDate = (dateString: string) => {
     try {
@@ -44,6 +52,14 @@ const JobListItem: React.FC<JobListItemProps> = ({ job, isSelected, onSelect }) 
     }
   };
 
+  // Handle view output click
+  const handleViewOutput = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Use either the route param projectId or the job's project_id
+    const pid = projectId || job.project_id;
+    navigate(`/${state.tenant?.slug}/projects/${pid}/jobs/${job._id}/output`);
+  };
+
   return (
     <li
       className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
@@ -61,8 +77,15 @@ const JobListItem: React.FC<JobListItemProps> = ({ job, isSelected, onSelect }) 
             Created: {formatDate(job.created_at)}
           </div>
         </div>
-        <div>
+        <div className="flex flex-col items-end gap-2">
           {getStatusBadge(job.status)}
+          
+          <button 
+            onClick={handleViewOutput}
+            className="text-xs flex items-center text-blue-600 hover:text-blue-800 mt-1"
+          >
+            <ExternalLink className="h-3 w-3 mr-1" /> View Output
+          </button>
         </div>
       </div>
     </li>
