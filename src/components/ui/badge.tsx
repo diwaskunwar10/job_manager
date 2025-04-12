@@ -40,3 +40,6 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants }
+
+// Keep the existing code but add this comment to ensure we don't modify the shadcn component
+// If we use any custom variants, they need to be applied through Tailwind classes
