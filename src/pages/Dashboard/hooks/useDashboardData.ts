@@ -137,9 +137,9 @@ export const useDashboardData = (slug: string | undefined, dateRange: { startDat
           description: "Your session has expired. Please login again.",
           variant: "destructive"
         });
-        // Redirect to login without removing token
-        navigate(`/${slug}/login`);
-        return;
+        // Don't redirect, just show the error
+        // navigate(`/${slug}/login`);
+        // return;
       }
 
       toast({

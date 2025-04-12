@@ -10,30 +10,26 @@ const TenantSlugPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const apiCallMadeRef = useRef(false);
-  
+
   useEffect(() => {
     const initializeTenant = async () => {
       // Only proceed if we haven't made an API call yet
       if (apiCallMadeRef.current) return;
-      
+
       // If no slug provided, immediately redirect to 404
       if (!slug) {
         navigate('/404');
         return;
       }
-      
+
       try {
         apiCallMadeRef.current = true; // Mark that we've made the API call
-        
+
         const exists = await checkTenantExists(slug);
-        
+
         if (exists) {
-          // If user is already authenticated, go to dashboard, else go to login
-          if (state.isAuthenticated) {
-            navigate(`/${slug}/dashboard`);
-          } else {
-            navigate(`/${slug}/login`);
-          }
+          // Always go to login page, don't automatically redirect to dashboard
+          navigate(`/${slug}/login`);
         } else {
           toast({
             title: "Invalid Tenant",
@@ -47,10 +43,10 @@ const TenantSlugPage: React.FC = () => {
         navigate('/404');
       }
     };
-    
+
     initializeTenant();
   }, []);  // Empty dependency array to run only once
-  
+
   return (
     <div className="flex items-center justify-center h-screen">
       <div className="flex flex-col items-center space-y-4">

@@ -12,8 +12,8 @@ import NotFoundPage from "./pages/NotFoundPage";
 const TenantSlugPage = lazy(() => import("./pages/TenantSlugPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
-const JobsPage = lazy(() => import("./pages/JobsPage"));
+const ProjectsPage = lazy(() => import("./pages/Projects"));
+const JobsPage = lazy(() => import("./pages/Jobs"));
 
 // Loading fallback
 const PageLoader = () => (
@@ -45,14 +45,15 @@ const App = () => (
             <Routes>
               {/* Index route - redirect to 404 if accessed directly */}
               <Route path="/" element={<Navigate to="/404" />} />
-              
+
               {/* Tenant routes */}
               <Route path="/:slug" element={<TenantSlugPage />} />
               <Route path="/:slug/login" element={<LoginPage />} />
               <Route path="/:slug/dashboard" element={<Dashboard />} />
               <Route path="/:slug/projects" element={<ProjectsPage />} />
+              <Route path="/:slug/projects/:projectId" element={<ProjectsPage />} />
               <Route path="/:slug/jobs" element={<JobsPage />} />
-              
+
               {/* 404 page */}
               <Route path="/404" element={<NotFoundPage />} />
               <Route path="*" element={<Navigate to="/404" />} />
