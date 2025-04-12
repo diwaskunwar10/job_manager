@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { projectService, Job } from '@/services/projectService';
 
@@ -29,12 +29,32 @@ export const useProjectJobs = (
   const [meta, setMeta] = useState({
     total: 0,
     page: 1,
-    page_size: 10
+    page_size: 10,
+    projectId: projectId // Include projectId in meta
   });
+
+  // Update meta when projectId changes
+  useEffect(() => {
+    setMeta(prevMeta => ({
+      ...prevMeta,
+      projectId
+    }));
+  }, [projectId]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Refs to prevent multiple API calls
+  const isInitialFetchDone = useRef(false);
+  const isFetchInProgress = useRef(false);
+  const prevProjectId = useRef<string | undefined>(undefined);
 
   // Fetch jobs with current filter
   const fetchJobs = useCallback(async () => {
+    // Prevent concurrent API calls
+    if (isFetchInProgress.current) {
+      console.log('Jobs fetch already in progress, skipping...');
+      return;
+    }
+
     if (!projectId) {
       // Clear jobs if no project ID is provided
       setJobs([]);
@@ -46,8 +66,10 @@ export const useProjectJobs = (
       return;
     }
 
+    isFetchInProgress.current = true;
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
 
       const apiParams = {
         jobStatus: filter.jobStatus,
@@ -101,6 +123,7 @@ export const useProjectJobs = (
       });
     } finally {
       setIsLoading(false);
+      isFetchInProgress.current = false;
     }
   }, [projectId, filter, toast]);
 
@@ -136,13 +159,28 @@ export const useProjectJobs = (
         page: shouldResetPage ? 1 : prevFilter.page
       };
     });
-  }, []);
 
-  // Fetch jobs when projectId or filter changes
+    // Schedule fetchJobs to run after state update
+    setTimeout(() => fetchJobs(), 100);
+  }, [fetchJobs]);
+
+  // Fetch jobs only on initial load or when projectId changes
   useEffect(() => {
-    // Always call fetchJobs - it will handle the case when projectId is undefined
-    fetchJobs();
-  }, [projectId, filter, fetchJobs]);
+    // Reset the initial fetch flag when projectId changes
+    if (projectId !== prevProjectId.current) {
+      isInitialFetchDone.current = false;
+    }
+
+    if (projectId && (!isInitialFetchDone.current || projectId !== prevProjectId.current)) {
+      console.log('Initial or new project jobs fetch for project:', projectId);
+      // Small delay to ensure all state updates have completed
+      setTimeout(() => {
+        fetchJobs();
+        isInitialFetchDone.current = true;
+        prevProjectId.current = projectId;
+      }, 100);
+    }
+  }, [projectId, fetchJobs]); // Removed filter and initialLoadComplete from dependencies
 
   return {
     jobs,

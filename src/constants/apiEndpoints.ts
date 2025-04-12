@@ -36,6 +36,12 @@ export const AGENTS = {
 
 export const USERS = {
   ROLES_COUNT: "/users/roles/count",
+  GET_SUBORDINATES: "/users/subordinates",
+  CHANGE_ROLE: "/users/change_role",
+  RESET_PASSWORD: "/users/reset_password",
+  CHANGE_PASSWORD: "/users/change_password",
+  DELETE_USER: "/users/delete",
+  INVITE_USER: "/users/invite",
 };
 
 export const SUPERVISORS = {

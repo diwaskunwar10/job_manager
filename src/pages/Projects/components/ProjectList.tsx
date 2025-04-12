@@ -1,13 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Project } from '@/services/projectService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Filter, SortAsc, SortDesc } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
 import {
   Pagination,
   PaginationContent,
@@ -45,217 +39,147 @@ const ProjectList: React.FC<ProjectListProps> = ({
   pageSizeOptions = [5, 10, 20, 50],
   onPageSizeChange
 }) => {
-  // State for filter and search
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  // Remove all filter-related state and logic
   const [filteredProjects, setFilteredProjects] = useState<Project[]>(projects);
-  
-  // Animation for search placeholder
-  const [placeholder, setPlaceholder] = useState('');
-  const fullPlaceholder = "Search projects...";
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // Animated placeholder effect
+  // Update filtered projects when projects prop changes
   useEffect(() => {
-    const typingInterval = setInterval(() => {
-      if (placeholderIndex <= fullPlaceholder.length) {
-        setPlaceholder(fullPlaceholder.substring(0, placeholderIndex));
-        setPlaceholderIndex(prev => prev + 1);
-      } else {
-        clearInterval(typingInterval);
-      }
-    }, 150);
-
-    return () => clearInterval(typingInterval);
-  }, [placeholderIndex]);
-
-  // Reset animation after it completes
-  useEffect(() => {
-    if (placeholderIndex > fullPlaceholder.length) {
-      const resetTimeout = setTimeout(() => {
-        setPlaceholderIndex(0);
-      }, 2000);
-      return () => clearTimeout(resetTimeout);
-    }
-  }, [placeholderIndex]);
-
-  // Apply filters whenever our filter state changes
-  useEffect(() => {
-    let results = [...projects];
-
-    // Apply search filter
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      results = results.filter(project => 
-        project.name.toLowerCase().includes(lowerSearch) || 
-        (project.description && project.description.toLowerCase().includes(lowerSearch))
-      );
-    }
-
-    // Apply date filters (using mock dates for now since project objects don't have dates)
-    // In a real app, you would filter on actual project creation dates
-
-    // Apply sorting (mock sorting by name for demonstration)
-    results.sort((a, b) => {
-      return sortOrder === 'asc' 
-        ? a.name.localeCompare(b.name) 
-        : b.name.localeCompare(a.name);
-    });
-
-    setFilteredProjects(results);
-  }, [projects, searchTerm, startDate, endDate, sortOrder]);
-
-  // Toggle sort order
-  const toggleSortOrder = () => {
-    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm('');
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setSortOrder('desc');
-  };
+    setFilteredProjects(projects);
+  }, [projects]);
 
   // Generate pagination component
   const renderPagination = () => {
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(meta.totalPages, startPage + 4);
+    // Ensure totalPages is at least 1 to avoid division by zero
+    const totalPages = Math.max(1, meta.totalPages);
+    const maxVisiblePages = 5; // Show max 5 page numbers
+
+    // Calculate start and end page numbers for pagination display
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust startPage if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    console.log(`Pagination: currentPage=${currentPage}, totalPages=${totalPages}, startPage=${startPage}, endPage=${endPage}`);
 
     return (
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (currentPage > 1 && !isLoading) {
-                  onPageChange(currentPage - 1);
-                }
-              }}
-              className={currentPage === 1 || isLoading ? 'pointer-events-none opacity-50' : ''}
-            />
-          </PaginationItem>
-
-          {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((pageNum) => (
-            <PaginationItem key={pageNum}>
-              <PaginationLink
+      <div className="flex items-center space-x-2 text-sm">
+        <span className="text-gray-600">
+          Page {currentPage} of {totalPages}
+        </span>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
                 href="#"
-                isActive={pageNum === currentPage}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (!isLoading) {
-                    onPageChange(pageNum);
+                  // Check if previous page is valid (greater than or equal to 1)
+                  const prevPage = currentPage - 1;
+                  if (prevPage >= 1 && !isLoading) {
+                    console.log(`Navigating to page ${prevPage} of ${meta.totalPages}`);
+                    onPageChange(prevPage);
                   }
                 }}
-                className={isLoading ? 'pointer-events-none' : ''}
-              >
-                {pageNum}
-              </PaginationLink>
+                className={currentPage <= 1 || isLoading ? 'pointer-events-none opacity-50' : ''}
+              />
             </PaginationItem>
-          ))}
 
-          <PaginationItem>
-            <PaginationNext
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (currentPage < meta.totalPages && !isLoading) {
-                  onPageChange(currentPage + 1);
-                }
-              }}
-              className={currentPage === meta.totalPages || isLoading ? 'pointer-events-none opacity-50' : ''}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+            {startPage > 1 && (
+              <>
+                <PaginationItem>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onPageChange(1);
+                    }}
+                  >
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+                {startPage > 2 && (
+                  <PaginationItem>
+                    <span className="px-2">...</span>
+                  </PaginationItem>
+                )}
+              </>
+            )}
+
+            {Array.from(
+              { length: endPage - startPage + 1 },
+              (_, i) => startPage + i
+            ).map((pageNum) => (
+              <PaginationItem key={pageNum}>
+                <PaginationLink
+                  href="#"
+                  isActive={pageNum === currentPage}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!isLoading) {
+                      onPageChange(pageNum);
+                    }
+                  }}
+                  className={isLoading ? 'pointer-events-none' : ''}
+                >
+                  {pageNum}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            {endPage < totalPages && (
+              <>
+                {endPage < totalPages - 1 && (
+                  <PaginationItem>
+                    <span className="px-2">...</span>
+                  </PaginationItem>
+                )}
+                <PaginationItem>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onPageChange(totalPages);
+                    }}
+                  >
+                    {totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              </>
+            )}
+
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Check if next page is valid (less than or equal to total pages)
+                  const nextPage = currentPage + 1;
+                  if (nextPage <= totalPages && !isLoading) {
+                    console.log(`Navigating to page ${nextPage} of ${totalPages}`);
+                    onPageChange(nextPage);
+                  }
+                }}
+                className={currentPage >= totalPages || isLoading ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
     );
   };
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full">
       <div className="p-4 border-b">
-        <h2 className="text-lg font-medium">Projects</h2>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-sm text-gray-500">
           {meta.total} projects found
         </p>
       </div>
 
-      {/* Filter Controls */}
-      <div className="p-3 bg-gray-50 rounded-lg m-3 space-y-3">
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="text"
-              placeholder={placeholder}
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleSortOrder}
-            title={`Sort ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}`}
-          >
-            {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="text-xs">
-                {startDate ? format(startDate, 'PP') : 'Start Date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="text-xs">
-                {endDate ? format(endDate, 'PP') : 'End Date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs"
-            onClick={resetFilters}
-          >
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex-grow overflow-auto" style={{ height: 'calc(100% - 160px)', maxHeight: 'calc(100% - 80px)', paddingBottom: '60px' }}>
+      <div className="flex-1 overflow-auto min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-t-4 border-b-4 border-brand-600 rounded-full animate-spin"></div>
@@ -286,28 +210,26 @@ const ProjectList: React.FC<ProjectListProps> = ({
         )}
       </div>
 
-      <div className="p-4 border-t bg-white absolute bottom-0 left-0 right-0">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="sticky bottom-0 p-4 border-t bg-white mt-auto">
+        <div className="flex justify-between items-center">
           {onPageSizeChange && (
-            <div className="w-full md:w-auto">
-              <Select
-                value={String(meta.pageSize)}
-                onValueChange={(value) => onPageSizeChange(Number(value))}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Page Size" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pageSizeOptions.map(size => (
-                    <SelectItem key={size} value={String(size)}>{size} per page</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={String(meta.pageSize)}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+            >
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Page Size" />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map(size => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size} per page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
-          <div>
-            {renderPagination()}
-          </div>
+          {renderPagination()}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { projectService, Project, ProjectDetail } from '@/services/projectService';
@@ -27,23 +27,47 @@ export const useProjects = (
   const [projectDetail, setProjectDetail] = useState<ProjectDetail | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
+  // Refs to prevent multiple API calls
+  const isInitialFetchDone = useRef(false);
+  const isFetchInProgress = useRef(false);
+
   // Fetch projects list
   const fetchProjects = useCallback(async () => {
+    // Prevent concurrent API calls
+    if (isFetchInProgress.current) {
+      console.log('Projects fetch already in progress, skipping...');
+      return;
+    }
+
     if (!slug) return;
 
+    isFetchInProgress.current = true;
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
 
       const response = await projectService.getProjects(page, pageSize);
 
       console.log("Fetched projects:", response);
 
       setProjects(response.data || []);
-      setMeta(response.meta || {
-        total: 0,
-        page: 1,
-        pageSize: 10,
-        totalPages: 1
+
+      // Map API response to expected format
+      // The API returns meta with page, page_size, total, total_pages
+      // But our component expects page, pageSize, total, totalPages
+      const apiMeta = response.meta || {};
+      setMeta({
+        total: apiMeta.total || 0,
+        page: apiMeta.page || 1,
+        pageSize: apiMeta.page_size || 10,
+        totalPages: apiMeta.total_pages || 1
+      });
+
+      console.log("Mapped meta data:", {
+        total: apiMeta.total || 0,
+        page: apiMeta.page || 1,
+        pageSize: apiMeta.page_size || 10,
+        totalPages: apiMeta.total_pages || 1
       });
 
       toast({
@@ -71,6 +95,7 @@ export const useProjects = (
       });
     } finally {
       setIsLoading(false);
+      isFetchInProgress.current = false;
     }
   }, [slug, page, pageSize, navigate, toast]);
 
@@ -110,9 +135,13 @@ export const useProjects = (
     setIsDetailLoading(false);
   }, [projects, toast]);
 
-  // Fetch projects on initial load and when page changes
+  // Fetch projects only on initial load
   useEffect(() => {
-    fetchProjects();
+    if (!isInitialFetchDone.current) {
+      console.log('Initial projects fetch');
+      fetchProjects();
+      isInitialFetchDone.current = true;
+    }
   }, [fetchProjects]);
 
   return {

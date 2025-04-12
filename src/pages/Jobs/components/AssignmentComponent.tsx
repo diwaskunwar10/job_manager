@@ -82,6 +82,7 @@ const AssignmentComponent: React.FC<AssignmentComponentProps> = ({
 
           <div>
             <p className="text-sm text-gray-500">Project: {selectedJob.project_name}</p>
+            <p>{selectedJob.created_at}</p>
             <p className="text-sm text-gray-500">Created: {new Date(selectedJob.created_at).toLocaleString()}</p>
             {selectedJob.executed_at && (
               <p className="text-sm text-gray-500">Executed: {new Date(selectedJob.executed_at).toLocaleString()}</p>

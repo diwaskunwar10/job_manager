@@ -7,17 +7,26 @@ import { Action } from '../types/dispatcherTypes';
  */
 const JobService = {
   /**
-   * Get jobs with pagination
+   * Get jobs with pagination and filters
    * @param {number} page - Page number
    * @param {number} pageSize - Number of items per page
+   * @param {Object} filters - Optional filters
+   * @param {string} filters.search_query - Search query
+   * @param {string} filters.project_id - Project ID
+   * @param {boolean} filters.verified - Verification status
+   * @param {string} filters.created_at_start - Created after date
+   * @param {string} filters.created_at_end - Created before date
+   * @param {string} filters.executed_at_start - Executed after date
+   * @param {string} filters.executed_at_end - Executed before date
    * @param {Dispatch<Action>} dispatch - Optional dispatch function for state updates
    * @returns {Promise} - Promise with jobs data
    */
-  getJobs: (page = 1, pageSize = 10, dispatch?: Dispatch<Action>) => {
+  getJobs: (page = 1, pageSize = 10, filters = {}, dispatch?: Dispatch<Action>) => {
     return httpBase.get('/get_jobs', {
       params: {
         page: page.toString(),
-        pageSize: pageSize.toString()
+        pageSize: pageSize.toString(),
+        ...filters
       }
     }, dispatch);
   },

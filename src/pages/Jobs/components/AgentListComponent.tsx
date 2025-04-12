@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Search } from 'lucide-react';
 
 // Define Agent type locally to avoid import issues
 interface Agent {
@@ -36,13 +37,112 @@ const AgentListComponent: React.FC<AgentListComponentProps> = ({
   // Default page size
   const pageSize = 10;
 
-  // Calculate actual total pages based on the number of agents
-  const actualTotalPages = Math.max(1, Math.ceil(agents.length / pageSize));
+  // Search states
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchFocused, setSearchFocused] = useState<boolean>(false);
+  const [filteredAgents, setFilteredAgents] = useState<Agent[]>(agents);
+
+  // Animated placeholder states
+  const [placeholder, setPlaceholder] = useState('');
+  const fullPlaceholder = "Search agents...";
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+
+  // Calculate actual total pages based on the number of filtered agents
+  const actualTotalPages = Math.max(1, Math.ceil(filteredAgents.length / pageSize));
+
+  // Filter agents when search query changes
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredAgents(agents);
+    } else {
+      const filtered = agents.filter(agent =>
+        agent.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        agent.role.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredAgents(filtered);
+    }
+  }, [agents, searchQuery]);
+
+  // Animated placeholder effect
+  useEffect(() => {
+    const typingInterval = setInterval(() => {
+      if (placeholderIndex <= fullPlaceholder.length) {
+        setPlaceholder(fullPlaceholder.substring(0, placeholderIndex));
+        setPlaceholderIndex(prev => prev + 1);
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 150);
+
+    return () => clearInterval(typingInterval);
+  }, [placeholderIndex, fullPlaceholder]);
+
+  // Cursor blinking effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+
+    return () => clearInterval(cursorInterval);
+  }, []);
+
+  // Reset animation after it completes
+  useEffect(() => {
+    if (placeholderIndex > fullPlaceholder.length) {
+      const resetTimeout = setTimeout(() => {
+        setPlaceholderIndex(0);
+      }, 2000);
+      return () => clearTimeout(resetTimeout);
+    }
+  }, [placeholderIndex, fullPlaceholder]);
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header with Search */}
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Agents</h2>
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-semibold">Agents</h2>
+        </div>
+
+        {/* Search Bar with Animation */}
+        <div className="relative">
+          <div className={`relative transition-all duration-300 ease-in-out transform ${searchFocused ? 'scale-105 -translate-y-0.5' : 'scale-100'}`}>
+            <input
+              type="text"
+              placeholder={`${placeholder}${showCursor && placeholderIndex <= fullPlaceholder.length ? '|' : ''}`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                setSearchFocused(true);
+                // Stop the placeholder animation when focused
+                setPlaceholderIndex(fullPlaceholder.length + 1);
+              }}
+              onBlur={() => setSearchFocused(false)}
+              className={`pl-10 pr-4 py-2 w-full rounded-md border ${searchFocused ? 'border-indigo-500 shadow-lg ring-2 ring-indigo-200' : 'border-gray-300 shadow-sm'} outline-none transition-all duration-300`}
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search
+                className={`h-5 w-5 transition-all duration-300 ${searchFocused ? 'text-indigo-500 scale-110' : 'text-gray-400 animate-pulse-slow'}`}
+                style={{
+                  transform: searchFocused ? 'translateX(-2px) rotate(-5deg)' : 'translateX(0) rotate(0deg)',
+                  transition: 'transform 0.3s ease-in-out'
+                }}
+              />
+            </div>
+            {searchQuery && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Agent List */}
@@ -58,7 +158,7 @@ const AgentListComponent: React.FC<AgentListComponentProps> = ({
         ) : (
           <ul className="divide-y divide-gray-200">
             {/* Apply client-side pagination */}
-            {agents
+            {filteredAgents
               .slice((currentPage - 1) * pageSize, currentPage * pageSize)
               .map((agent) => {
               const isAssigned = assignedAgentIds.includes(agent._id);
