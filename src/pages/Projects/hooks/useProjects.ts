@@ -8,6 +8,8 @@ export const useProjects = (
   page: number,
   pageSize: number
 ) => {
+  // Available page size options
+  const pageSizeOptions = [5, 10, 20, 50];
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -120,6 +122,7 @@ export const useProjects = (
     isLoading,
     isDetailLoading,
     fetchProjects,
-    fetchProjectDetail
+    fetchProjectDetail,
+    pageSizeOptions
   };
 };

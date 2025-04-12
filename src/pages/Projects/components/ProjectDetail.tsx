@@ -66,7 +66,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, isLoading }) => 
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-6 border-b">
+      <div className="p-6 border-b flex-shrink-0">
         <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
         <div className="mt-2 flex items-center">
           {project.status && (
@@ -87,8 +87,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, isLoading }) => 
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
-        <div className="border-b px-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="border-b px-6 flex-shrink-0">
           <div className="flex space-x-2 border-b">
             <button
               className={`px-4 py-2 text-sm font-medium ${activeTab === 'details' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
@@ -161,13 +161,16 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, isLoading }) => 
         {activeTab === 'jobs' && (
           <div className="flex-1 overflow-hidden">
             {project?._id ? (
-              <ProjectJobs
-                jobs={jobs}
-                isLoading={isJobsLoading}
-                filter={filter}
-                meta={meta}
-                onFilterChange={updateFilter}
-              />
+              <div className="h-full">
+                <ProjectJobs
+                  jobs={jobs}
+                  isLoading={isJobsLoading}
+                  filter={filter}
+                  meta={meta}
+                  onFilterChange={updateFilter}
+                  pageSizeOptions={[5, 10, 20, 50]}
+                />
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full p-6">
                 <p>Select a project to view jobs</p>

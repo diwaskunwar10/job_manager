@@ -1,6 +1,15 @@
 import React from 'react';
 import { Project } from '@/services/projectService';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 interface ProjectListProps {
   projects: Project[];
@@ -15,6 +24,8 @@ interface ProjectListProps {
   onPageChange: (page: number) => void;
   onProjectSelect: (id: string) => void;
   selectedProjectId?: string;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 const ProjectList: React.FC<ProjectListProps> = ({
@@ -24,72 +35,76 @@ const ProjectList: React.FC<ProjectListProps> = ({
   meta,
   onPageChange,
   onProjectSelect,
-  selectedProjectId
+  selectedProjectId,
+  pageSizeOptions = [5, 10, 20, 50],
+  onPageSizeChange
 }) => {
-  // Generate pagination buttons
+  // Generate pagination component
   const renderPagination = () => {
-    const buttons = [];
-
-    // Previous button
-    buttons.push(
-      <Button
-        key="prev"
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1 || isLoading}
-        className="px-3"
-      >
-        &lt;
-      </Button>
-    );
-
-    // Page numbers
     const startPage = Math.max(1, currentPage - 2);
     const endPage = Math.min(meta.totalPages, startPage + 4);
 
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <Button
-          key={i}
-          variant={i === currentPage ? "default" : "outline"}
-          size="sm"
-          onClick={() => onPageChange(i)}
-          disabled={isLoading}
-          className="px-3"
-        >
-          {i}
-        </Button>
-      );
-    }
+    return (
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (currentPage > 1 && !isLoading) {
+                  onPageChange(currentPage - 1);
+                }
+              }}
+              className={currentPage === 1 || isLoading ? 'pointer-events-none opacity-50' : ''}
+            />
+          </PaginationItem>
 
-    // Next button
-    buttons.push(
-      <Button
-        key="next"
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === meta.totalPages || isLoading}
-        className="px-3"
-      >
-        &gt;
-      </Button>
+          {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((pageNum) => (
+            <PaginationItem key={pageNum}>
+              <PaginationLink
+                href="#"
+                isActive={pageNum === currentPage}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (!isLoading) {
+                    onPageChange(pageNum);
+                  }
+                }}
+                className={isLoading ? 'pointer-events-none' : ''}
+              >
+                {pageNum}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+
+          <PaginationItem>
+            <PaginationNext
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (currentPage < meta.totalPages && !isLoading) {
+                  onPageChange(currentPage + 1);
+                }
+              }}
+              className={currentPage === meta.totalPages || isLoading ? 'pointer-events-none opacity-50' : ''}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     );
-
-    return buttons;
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <div className="p-4 border-b">
         <h2 className="text-lg font-medium">Projects</h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 mt-2">
           {meta.total} projects found
         </p>
       </div>
 
-      <div className="flex-grow overflow-auto">
+      <div className="flex-grow overflow-auto" style={{ height: 'calc(100% - 160px)', maxHeight: 'calc(100% - 80px)', paddingBottom: '60px' }}>
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <p>Loading projects...</p>
@@ -120,11 +135,30 @@ const ProjectList: React.FC<ProjectListProps> = ({
         )}
       </div>
 
-      {meta.totalPages > 1 && (
-        <div className="p-4 border-t flex justify-center space-x-1">
-          {renderPagination()}
+      <div className="p-4 border-t bg-white absolute bottom-0 left-0 right-0">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          {onPageSizeChange && (
+            <div className="w-full md:w-auto">
+              <Select
+                value={String(meta.pageSize)}
+                onValueChange={(value) => onPageSizeChange(Number(value))}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Page Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageSizeOptions.map(size => (
+                    <SelectItem key={size} value={String(size)}>{size} per page</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div>
+            {renderPagination()}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

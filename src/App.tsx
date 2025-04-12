@@ -13,7 +13,7 @@ const TenantSlugPage = lazy(() => import("./pages/TenantSlugPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ProjectsPage = lazy(() => import("./pages/Projects"));
-const JobsPage = lazy(() => import("./pages/JobsPage"));
+const JobsPage = lazy(() => import("./pages/Jobs"));
 
 // Loading fallback
 const PageLoader = () => (

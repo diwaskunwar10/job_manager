@@ -21,6 +21,9 @@ export const useProjectJobs = (
     pageSize: 10
   });
 
+  // Available page size options
+  const pageSizeOptions = [5, 10, 20, 50];
+
   // Jobs data state
   const [jobs, setJobs] = useState<Job[]>([]);
   const [meta, setMeta] = useState({
@@ -46,17 +49,20 @@ export const useProjectJobs = (
     try {
       setIsLoading(true);
 
-      console.log(`Calling API: /jobs/${projectId} with filters:`, filter);
+      const apiParams = {
+        jobStatus: filter.jobStatus,
+        verified: filter.verified,
+        searchQuery: filter.searchQuery,
+        page: filter.page,
+        pageSize: filter.pageSize
+      };
+
+      console.log(`Calling API: /jobs/${projectId} with filters:`, apiParams);
+      console.log(`Current page being requested: ${filter.page}`);
 
       const response = await projectService.getJobsByProject(
         projectId,
-        {
-          jobStatus: filter.jobStatus,
-          verified: filter.verified,
-          searchQuery: filter.searchQuery,
-          page: filter.page,
-          pageSize: filter.pageSize
-        }
+        apiParams
       );
 
       console.log(`Fetched jobs for project ${projectId}:`, response);
@@ -100,17 +106,36 @@ export const useProjectJobs = (
 
   // Update filter and fetch jobs
   const updateFilter = useCallback((newFilter: Partial<JobsFilter>) => {
-    setFilter(prevFilter => ({
-      ...prevFilter,
-      ...newFilter,
-      // Reset to page 1 if anything other than page changes
-      page: newFilter.page || (
+    console.log('Updating filter with:', newFilter);
+
+    setFilter(prevFilter => {
+      // If page is explicitly provided, use it
+      if ('page' in newFilter) {
+        console.log(`Changing page from ${prevFilter.page} to ${newFilter.page}`);
+        return {
+          ...prevFilter,
+          ...newFilter
+        };
+      }
+
+      // Otherwise, if other filters change, reset to page 1
+      const shouldResetPage = (
         'jobStatus' in newFilter ||
         'verified' in newFilter ||
         'searchQuery' in newFilter ||
         'pageSize' in newFilter
-      ) ? 1 : prevFilter.page
-    }));
+      );
+
+      if (shouldResetPage) {
+        console.log('Resetting page to 1 due to filter change');
+      }
+
+      return {
+        ...prevFilter,
+        ...newFilter,
+        page: shouldResetPage ? 1 : prevFilter.page
+      };
+    });
   }, []);
 
   // Fetch jobs when projectId or filter changes
@@ -125,6 +150,7 @@ export const useProjectJobs = (
     isLoading,
     filter,
     updateFilter,
-    fetchJobs
+    fetchJobs,
+    pageSizeOptions
   };
 };

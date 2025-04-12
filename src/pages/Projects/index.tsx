@@ -11,9 +11,9 @@ const ProjectsPage: React.FC = () => {
   const { state } = useAppContext();
   const navigate = useNavigate();
 
-  // Current page for pagination
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // State to track selected project
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -33,6 +33,12 @@ const ProjectsPage: React.FC = () => {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   // Handle project selection
@@ -82,7 +88,7 @@ const ProjectsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-220px)]">
+        <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-150px)]" style={{ minHeight: '600px' }}>
           {/* Project List - Left Side */}
           <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md overflow-hidden">
             <ProjectList
@@ -93,6 +99,8 @@ const ProjectsPage: React.FC = () => {
               onPageChange={handlePageChange}
               onProjectSelect={handleProjectSelect}
               selectedProjectId={selectedProjectId}
+              pageSizeOptions={[5, 10, 20, 50]}
+              onPageSizeChange={handlePageSizeChange}
             />
           </div>
           {/* Project Detail - Right Side */}

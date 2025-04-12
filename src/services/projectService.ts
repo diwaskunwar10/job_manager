@@ -102,6 +102,7 @@ export const projectService = {
     } = options || {};
 
     // Build query parameters
+    console.log(`Building query params with page=${page}, pageSize=${pageSize}`);
     let queryParams = `page=${page}&page_size=${pageSize}`;
 
     if (jobStatus) {
@@ -144,6 +145,19 @@ export const projectService = {
     return httpBase.post<void>(
       `/jobs/${jobId}/reexecute`,
       {},
+      undefined,
+      dispatch
+    );
+  },
+
+  // Get job output
+  getJobOutput: async (
+    jobId: string,
+    jobIndex: number = 0,
+    dispatch?: Dispatch<Action>
+  ): Promise<{ data: { putput: string; input: string }; total_jobs: number }> => {
+    return httpBase.get<{ data: { putput: string; input: string }; total_jobs: number }>(
+      `/job_output/${jobId}?job_index=${jobIndex}`,
       undefined,
       dispatch
     );
