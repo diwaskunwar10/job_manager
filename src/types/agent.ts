@@ -1,6 +1,14 @@
+
 export interface Agent {
-  id: string;
-  name: string;
-  role: string;
-  status?: 'available' | 'busy' | 'offline';
+  _id: string; // Added missing property
+  id?: string;
+  name?: string;
+  username: string; // Added missing property
+  status?: 'active' | 'inactive' | 'busy';
+  type?: string;
+  performance?: {
+    completedJobs?: number;
+    averageTime?: number;
+  };
+  assignedJobs?: number;
 }

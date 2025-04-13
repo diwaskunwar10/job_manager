@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { projectService } from '../../services/projectService';
 import JobService from '../../services/jobService';
@@ -10,6 +9,9 @@ export interface JobsFilter {
   searchQuery?: string;
   page: number;
   pageSize: number;
+  created_at_start?: string;
+  created_at_end?: string;
+  sort_direction?: 'asc' | 'desc';
 }
 
 interface JobOutput {
@@ -63,7 +65,11 @@ export const fetchJobs = createAsyncThunk(
     try {
       const state = getState() as { jobs: JobsState };
       const { filter } = state.jobs;
-      const response = await JobService.getJobs(filter.page, filter.pageSize, filter);
+      
+      // Separate filter from callbacks to fix type issues
+      const { page, pageSize, ...filterParams } = filter;
+      
+      const response = await JobService.getJobs(page, pageSize, filterParams as any);
       return response;
     } catch (error) {
       if (error instanceof Error) {
