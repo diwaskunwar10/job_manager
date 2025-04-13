@@ -1,11 +1,6 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppProvider } from "./context/AppContext";
 import { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import NotFoundPage from "./pages/NotFoundPage";
 
 // Lazy load pages for better performance
@@ -14,8 +9,8 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ProjectsPage = lazy(() => import("./pages/Projects"));
 const JobsPage = lazy(() => import("./pages/Jobs"));
+const JobOutputPage = lazy(() => import("./pages/Jobs/JobOutput"));
 const UserManagementPage = lazy(() => import("./pages/UserManagement"));
-// const JobOutputPage = lazy(() => import("./pages/Jobs/components/JobOutputPage"));
 
 // Loading fallback
 const PageLoader = () => (
@@ -27,45 +22,27 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppProvider>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* Index route - redirect to 404 if accessed directly */}
-              <Route path="/" element={<Navigate to="/404" />} />
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      {/* Index route - redirect to 404 if accessed directly */}
+      <Route path="/" element={<Navigate to="/404" />} />
 
-              {/* Tenant routes */}
-              <Route path="/:slug" element={<TenantSlugPage />} />
-              <Route path="/:slug/login" element={<LoginPage />} />
-              <Route path="/:slug/dashboard" element={<Dashboard />} />
-              <Route path="/:slug/projects" element={<ProjectsPage />} />
-              <Route path="/:slug/projects/:projectId" element={<ProjectsPage />} />
-              <Route path="/:slug/jobs" element={<JobsPage />} />
-              <Route path="/:slug/users" element={<UserManagementPage />} />
+      {/* Tenant routes */}
+      <Route path="/:slug" element={<TenantSlugPage />} />
+      <Route path="/:slug/login" element={<LoginPage />} />
+      <Route path="/:slug/dashboard" element={<Dashboard />} />
+      <Route path="/:slug/projects" element={<ProjectsPage />} />
+      <Route path="/:slug/projects/:projectId" element={<ProjectsPage />} />
+      <Route path="/:slug/jobs" element={<JobsPage />} />
+      <Route path="/:slug/jobs/:jobId/output" element={<JobOutputPage />} />
+      <Route path="/:slug/users" element={<UserManagementPage />} />
 
-              {/* 404 page */}
-              <Route path="/404" element={<NotFoundPage />} />
-              <Route path="*" element={<Navigate to="/404" />} />
-            </Routes>
-          </Suspense>
-        </AppProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+      {/* 404 page */}
+      <Route path="/404" element={<NotFoundPage />} />
+      <Route path="*" element={<Navigate to="/404" />} />
+    </Routes>
+  </Suspense>
 );
 
 export default App;
