@@ -4,8 +4,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
 const NotFoundPage: React.FC = () => {
-  const { state } = useAppContext();
   const navigate = useNavigate();
+  let state = { tenant: null, isAuthenticated: false };
+  
+  try {
+    // Try to get context, but don't crash if not available
+    const context = useAppContext();
+    state = context.state;
+  } catch (error) {
+    console.error("Context not available:", error);
+  }
 
   // Animation effect on mount
   useEffect(() => {

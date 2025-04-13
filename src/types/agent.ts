@@ -4,9 +4,9 @@ export interface Agent {
   id?: string;
   name?: string;
   username: string;
-  status?: 'active' | 'inactive' | 'busy';
+  status?: 'active' | 'inactive' | 'busy' | 'available' | 'offline';
   type?: string;
-  role?: string; // Added missing property that's used in AgentList and AssignmentPanel
+  role?: string;
   performance?: {
     completedJobs?: number;
     averageTime?: number;

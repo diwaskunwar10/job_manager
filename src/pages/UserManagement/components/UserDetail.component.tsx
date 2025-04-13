@@ -1,375 +1,229 @@
-import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import userService from '@/services/userService';
-import ConfirmationDialog from '@/components/ui/confirmation-dialog';
-import {
-  User,
-  Mail,
-  Calendar,
-  Clock,
-  Shield,
-  Key,
-  Save,
-  Trash2
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
+  SelectValue,
+} from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
 
-interface UserDetailComponentProps {
-  user: User;
-  onRoleChange: (userId: string, newRole: string) => void;
-  onPasswordReset: (userId: string) => void;
-  onDeleteUser?: (userId: string) => void;
+// Ensure User is properly typed
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  last_login?: string;
 }
 
-const UserDetailComponent: React.FC<UserDetailComponentProps> = ({
-  user,
-  onRoleChange,
-  onPasswordReset,
-  onDeleteUser
-}) => {
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const { toast } = useToast();
+const UserDetailComponent: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('');
+  const [status, setStatus] = useState('');
+  const [date, setDate] = React.useState<Date>();
 
-  // Confirmation dialog states
-  const [isRoleChangeDialogOpen, setIsRoleChangeDialogOpen] = useState(false);
-  const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
-  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
-  const [isPasswordChangeDialogOpen, setIsPasswordChangeDialogOpen] = useState(false);
-  const [pendingRoleChange, setPendingRoleChange] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Mock API call - replace with actual API endpoint
+        const mockUser = {
+          id: userId,
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          role: 'admin',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+        };
 
-  // Format date to a more readable format
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-  // Handle role change
-  const handleRoleChange = (value: string) => {
-    setPendingRoleChange(value);
-    setIsRoleChangeDialogOpen(true);
-  };
-
-  // Confirm role change
-  const confirmRoleChange = () => {
-    if (pendingRoleChange) {
-      onRoleChange(user._id, pendingRoleChange);
-      setPendingRoleChange(null);
-    }
-  };
-
-  // Handle password reset
-  const handlePasswordReset = () => {
-    setIsPasswordResetDialogOpen(true);
-  };
-
-  // Confirm password reset
-  const confirmPasswordReset = () => {
-    onPasswordReset(user._id);
-  };
-
-  // Handle delete user
-  const handleDeleteUser = () => {
-    setIsDeleteUserDialogOpen(true);
-  };
-
-  // Confirm delete user
-  const confirmDeleteUser = () => {
-    if (onDeleteUser) {
-      onDeleteUser(user._id);
-    }
-  };
-
-  // Handle change password
-  const handleChangePassword = () => {
-    // Reset error
-    setPasswordError('');
-
-    // Validate passwords
-    if (!currentPassword) {
-      setPasswordError('Current password is required');
-      return;
-    }
-
-    if (!newPassword) {
-      setPasswordError('New password is required');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
-      return;
-    }
-
-    // Open confirmation dialog
-    setIsPasswordChangeDialogOpen(true);
-  };
-
-  // Confirm password change
-  const confirmPasswordChange = () => {
-    // Call the service to change the password
-    userService.changePassword(
-      user._id,
-      currentPassword,
-      newPassword,
-      {
-        successCallback: () => {
-          // Reset form and close dialog
-          setCurrentPassword('');
-          setNewPassword('');
-          setConfirmPassword('');
-          setIsChangePasswordOpen(false);
-
-          // Show success message
-          toast({
-            title: 'Password Changed',
-            description: 'Your password has been successfully updated.'
-          });
-        },
-        failureCallback: (error) => {
-          console.error('Error changing password:', error);
-          setPasswordError('Failed to change password. Please check your current password and try again.');
-        }
+        setUser(mockUser as User);
+        setName(mockUser.name);
+        setEmail(mockUser.email);
+        setRole(mockUser.role);
+        setStatus(mockUser.status);
+      } catch (e: any) {
+        setError(e.message || 'Failed to fetch user');
+      } finally {
+        setLoading(false);
       }
-    );
+    };
+
+    fetchUser();
+  }, [userId]);
+
+  const handleEditClick = () => {
+    setEditMode(true);
   };
+
+  const handleCancelClick = () => {
+    setEditMode(false);
+    setName(user?.name || '');
+    setEmail(user?.email || '');
+    setRole(user?.role || '');
+    setStatus(user?.status || '');
+  };
+
+  const handleSaveClick = () => {
+    // Mock API call - replace with actual API endpoint
+    const updatedUser = {
+      ...user,
+      name,
+      email,
+      role,
+      status,
+    };
+
+    setUser(updatedUser as User);
+    setEditMode(false);
+  };
+
+  if (loading) {
+    return <div>Loading user details...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!user) {
+    return <div>User not found</div>;
+  }
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">User Details</h2>
-
-      <div className="space-y-6">
-        {/* Basic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center text-gray-500 text-sm">
-              <User className="w-4 h-4 mr-2" />
-              <span>Username</span>
-            </div>
-            <p className="text-gray-900">{user.username}</p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center text-gray-500 text-sm">
-              <Mail className="w-4 h-4 mr-2" />
-              <span>Email</span>
-            </div>
-            <p className="text-gray-900">{user.email || 'No email'}</p>
-          </div>
+    <Card className="w-[400px]">
+      <CardHeader>
+        <h2 className="text-lg font-semibold">User Details</h2>
+        <p className="text-sm text-muted-foreground">
+          Information about the selected user.
+        </p>
+      </CardHeader>
+      <CardContent className="grid gap-4 py-4">
+        <div className="grid gap-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={!editMode}
+          />
         </div>
-
-        {/* Dates */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center text-gray-500 text-sm">
-              <Calendar className="w-4 h-4 mr-2" />
-              <span>Created At</span>
-            </div>
-            <p className="text-gray-900">{user.createdAt ? formatDate(user.createdAt) : 'Unknown'}</p>
-          </div>
-
-          {user.lastLogin && (
-            <div className="space-y-2">
-              <div className="flex items-center text-gray-500 text-sm">
-                <Clock className="w-4 h-4 mr-2" />
-                <span>Last Login</span>
-              </div>
-              <p className="text-gray-900">{formatDate(user.lastLogin)}</p>
-            </div>
-          )}
+        <div className="grid gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={!editMode}
+          />
         </div>
-
-        {/* Role */}
-        <div className="space-y-2">
-          <div className="flex items-center text-gray-500 text-sm">
-            <Shield className="w-4 h-4 mr-2" />
-            <span>Role</span>
-          </div>
-          <Select defaultValue={user.role} onValueChange={handleRoleChange}>
-            <SelectTrigger className="w-full md:w-1/3">
+        <div className="grid gap-2">
+          <Label htmlFor="role">Role</Label>
+          <Select value={role} onValueChange={setRole} disabled={!editMode}>
+            <SelectTrigger id="role">
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="editor">Editor</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
             </SelectContent>
           </Select>
         </div>
-
-        {/* Password Management */}
-        <div className="pt-4 border-t border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Password Management</h3>
-
-          <div className="flex flex-col md:flex-row gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsChangePasswordOpen(true)}
-              className="flex items-center"
-            >
-              <Key className="w-4 h-4 mr-2" />
-              Change Password
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => handlePasswordReset(user.id)}
-              className="flex items-center"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Send Password Reset Email
-            </Button>
-
-            {onDeleteUser && (
-              <Button
-                variant="destructive"
-                onClick={handleDeleteUser}
-                className="flex items-center"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete User
-              </Button>
-            )}
-          </div>
+        <div className="grid gap-2">
+          <Label htmlFor="status">Status</Label>
+          <Select value={status} onValueChange={setStatus} disabled={!editMode}>
+            <SelectTrigger id="status">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-
-      {/* Change Password Dialog */}
-      <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {passwordError && (
-              <div className="text-sm text-red-500 p-2 bg-red-50 rounded">
-                {passwordError}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label htmlFor="current-password" className="text-sm font-medium text-gray-700">
-                Current Password
-              </label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
+        <div className="grid gap-2">
+          <Label>Last Login</Label>
+          <p className="text-sm text-muted-foreground">
+            {user.last_login ? new Date(user.last_login).toLocaleString() : 'N/A'}
+          </p>
+        </div>
+        <div className="grid gap-2">
+          <Label>Created At</Label>
+          <p className="text-sm text-muted-foreground">
+            {new Date(user.created_at).toLocaleString()}
+          </p>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="date">Date of Birth</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                disabled={(date) =>
+                  date > new Date() || date < new Date("1900-01-01")
+                }
+                initialFocus
               />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="new-password" className="text-sm font-medium text-gray-700">
-                New Password
-              </label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">
-                Confirm New Password
-              </label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsChangePasswordOpen(false)}>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="terms">Accept terms</Label>
+          <Switch id="terms" />
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        {!editMode ? (
+          <Button onClick={handleEditClick}>Edit</Button>
+        ) : (
+          <div className="space-x-2">
+            <Button variant="secondary" onClick={handleCancelClick}>
               Cancel
             </Button>
-            <Button onClick={handleChangePassword} className="flex items-center">
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirmation Dialogs */}
-      <ConfirmationDialog
-        isOpen={isRoleChangeDialogOpen}
-        onClose={() => setIsRoleChangeDialogOpen(false)}
-        onConfirm={confirmRoleChange}
-        title="Change User Role"
-        description={`Are you sure you want to change ${user.username}'s role to ${pendingRoleChange}?`}
-        confirmText="Change Role"
-        variant="default"
-      />
-
-      <ConfirmationDialog
-        isOpen={isPasswordResetDialogOpen}
-        onClose={() => setIsPasswordResetDialogOpen(false)}
-        onConfirm={confirmPasswordReset}
-        title="Reset Password"
-        description={`Are you sure you want to send a password reset email to ${user.username}?`}
-        confirmText="Send Reset Email"
-        variant="default"
-      />
-
-      <ConfirmationDialog
-        isOpen={isDeleteUserDialogOpen}
-        onClose={() => setIsDeleteUserDialogOpen(false)}
-        onConfirm={confirmDeleteUser}
-        title="Delete User"
-        description={`Are you sure you want to delete user ${user.username}? This action cannot be undone.`}
-        confirmText="Delete User"
-        variant="destructive"
-      />
-
-      <ConfirmationDialog
-        isOpen={isPasswordChangeDialogOpen}
-        onClose={() => setIsPasswordChangeDialogOpen(false)}
-        onConfirm={confirmPasswordChange}
-        title="Change Password"
-        description="Are you sure you want to change your password?"
-        confirmText="Change Password"
-        variant="default"
-      />
-    </div>
+            <Button onClick={handleSaveClick}>Save</Button>
+          </div>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
 

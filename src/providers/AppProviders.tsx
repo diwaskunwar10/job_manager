@@ -6,6 +6,7 @@ import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { AppProvider } from '../context/AppContext';
 import { store } from '../redux/store';
 
 interface AppProvidersProps {
@@ -29,7 +30,11 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>{children}</BrowserRouter>
+          <BrowserRouter>
+            <AppProvider>
+              {children}
+            </AppProvider>
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </Provider>

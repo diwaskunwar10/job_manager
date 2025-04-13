@@ -1,4 +1,3 @@
-
 import apiRequest, { ApiCallbacks } from '../utils/httpClient';
 import { PROJECTS, JOBS } from '../constants/apiEndpoints';
 
@@ -31,15 +30,16 @@ export interface ProjectDetail {
 
 export interface Job {
   _id: string;
+  id: string;
   name: string;
-  type: string;
-  created_by: string;
-  created_at: string;
+  description?: string;
   status: string;
-  verified: boolean;
+  type?: string | undefined;
   project_id: string;
-  completed_at: string;
-  executed_at: string;
+  project_name?: string;
+  created_at: string;
+  executed_at?: string;
+  completed_at?: string;
 }
 
 export interface JobsResponse {
