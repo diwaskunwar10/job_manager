@@ -1,11 +1,12 @@
 
 export interface Agent {
-  _id: string; // Added missing property
+  _id: string;
   id?: string;
   name?: string;
-  username: string; // Added missing property
+  username: string;
   status?: 'active' | 'inactive' | 'busy';
   type?: string;
+  role?: string; // Added missing property that's used in AgentList and AssignmentPanel
   performance?: {
     completedJobs?: number;
     averageTime?: number;

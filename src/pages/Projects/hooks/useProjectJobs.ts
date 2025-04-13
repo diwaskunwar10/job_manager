@@ -1,106 +1,86 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useDispatch } from 'react-redux';
-import { useAppDispatch } from '@/redux/hooks';
-import { fetchJobsByProject, setFilter, JobsFilter } from '@/redux/slices/jobsSlice';
+import { useState, useCallback } from 'react';
+import { Job as JobType } from '@/types/job';
 import { projectService } from '@/services/projectService';
-import { Job } from '@/types/job';
 import { useToast } from '@/hooks/use-toast';
 
+export interface JobsFilter {
+  jobStatus?: 'pending' | 'failed' | 'completed' | 'in-progress';
+  verified?: boolean;
+  searchQuery?: string;
+  page: number;
+  pageSize: number;
+}
+
+interface JobsMeta {
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export const useProjectJobs = (projectId?: string) => {
-  const dispatch = useAppDispatch();
-  const { toast } = useToast();
-  
-  // State for jobs list
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [meta, setMeta] = useState({
+  const [jobs, setJobs] = useState<JobType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [filter, setFilter] = useState<JobsFilter>({
+    page: 1,
+    pageSize: 10,
+  });
+  const [meta, setMeta] = useState<JobsMeta & {projectId?: string}>({
     total: 0,
     page: 1,
-    pageSize: 10,
-    totalPages: 1,
-    projectId: projectId || ''
+    page_size: 10,
   });
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Filter state
-  const [filter, setJobsFilter] = useState<JobsFilter>({
-    page: 1,
-    pageSize: 10,
-    jobStatus: undefined,
-    verified: undefined,
-    searchQuery: undefined
-  });
-  
-  // Fetch jobs
+  const { toast } = useToast();
+
+  // Fetch jobs based on current filters
   const fetchJobs = useCallback(async () => {
     if (!projectId) return;
     
     setIsLoading(true);
-    
     try {
-      const options = {
-        jobStatus: filter.jobStatus,
-        verified: filter.verified,
-        searchQuery: filter.searchQuery,
-        page: filter.page,
-        pageSize: filter.pageSize,
-      };
-      
-      const response = await projectService.getJobsByProject(projectId, options);
-      
+      const response = await projectService.getJobsByProject(projectId, filter);
       setJobs(response.data || []);
       
-      // Map API response to expected format and include projectId
-      const apiMeta = response.meta || {};
-      setMeta({
-        total: apiMeta.total || 0,
-        page: apiMeta.page || 1,
-        pageSize: apiMeta.page_size || 10,
-        totalPages: apiMeta.total_pages || 1,
-        projectId: projectId
-      });
-      
-      toast({
-        title: "Jobs Loaded",
-        description: "Job list has been updated."
-      });
+      // Update meta information
+      if (response.meta) {
+        setMeta({
+          total: response.meta.total || 0,
+          page: response.meta.page || 1,
+          page_size: response.meta.page_size || 10,
+          projectId,
+        });
+      }
     } catch (error) {
-      console.error("Error fetching jobs:", error);
-      
+      console.error('Failed to fetch jobs:', error);
       toast({
-        title: "Error Loading Jobs",
-        description: "Failed to load jobs. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load jobs. Please try again.',
+        variant: 'destructive',
       });
+      setJobs([]);
     } finally {
       setIsLoading(false);
     }
   }, [projectId, filter, toast]);
-  
-  // Update filter and re-fetch jobs
+
+  // Update filter and trigger a re-fetch
   const updateFilter = useCallback((newFilter: Partial<JobsFilter>) => {
-    setJobsFilter(prev => {
-      // If changing page size, reset to page 1
-      if (newFilter.pageSize && newFilter.pageSize !== prev.pageSize) {
-        return { ...prev, ...newFilter, page: 1 };
-      }
-      return { ...prev, ...newFilter };
-    });
+    setFilter(prev => ({
+      ...prev,
+      ...newFilter,
+      // If filter changes other than page, reset to page 1
+      page: 'page' in newFilter ? newFilter.page! : 
+        ('jobStatus' in newFilter || 'verified' in newFilter || 
+        'searchQuery' in newFilter || 'pageSize' in newFilter) ? 1 : prev.page,
+    }));
   }, []);
-  
-  // Fetch jobs when filter changes or projectId changes
-  useEffect(() => {
-    if (projectId) {
-      fetchJobs();
-    }
-  }, [projectId, filter, fetchJobs]);
-  
+
   return {
     jobs,
-    meta,
     isLoading,
+    meta,
     filter,
     updateFilter,
-    fetchJobs
+    fetchJobs,
   };
 };
