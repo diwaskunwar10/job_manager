@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Job, projectService } from '@/services/projectService';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { JobsFilter } from '../hooks/useProjectJobs';
 import { format } from 'date-fns';
-import { Loader2, Play, RefreshCw, ChevronsLeft, ChevronsRight, FileText, Plus } from 'lucide-react';
+import { Loader2, Play, RefreshCw, ChevronsLeft, ChevronsRight, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Pagination,
@@ -16,14 +17,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+
 
 interface ProjectJobsProps {
   jobs: Job[];
@@ -38,6 +32,7 @@ interface ProjectJobsProps {
   onFilterChange: (filter: Partial<JobsFilter>) => void;
   pageSizeOptions?: number[];
   projectId?: string; // Add projectId prop
+  onViewOutput?: (jobId: string) => void; // Add callback for viewing job output
 }
 
 const ProjectJobs: React.FC<ProjectJobsProps> = ({
@@ -47,21 +42,15 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
   meta,
   onFilterChange,
   pageSizeOptions = [5, 10, 20, 50],
-  projectId
+  projectId,
+  onViewOutput
 }) => {
   const { toast } = useToast();
-
-  // State for job output dialog
-  const [isOutputDialogOpen, setIsOutputDialogOpen] = useState(false);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [selectedJobName, setSelectedJobName] = useState<string>('');
-  const [jobOutput, setJobOutput] = useState<string>('');
-  const [jobInput, setJobInput] = useState<string>('');
-  const [totalJobs, setTotalJobs] = useState<number>(0);
-  const [currentJobIndex, setCurrentJobIndex] = useState<number>(0);
-  const [isLoadingOutput, setIsLoadingOutput] = useState(false);
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
 
   // State for job management
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   // Handle execute job
   const handleExecuteJob = (jobId: string) => {
     console.log(`Executing job: ${jobId}`);
@@ -105,49 +94,33 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
   };
 
   // Handle view job output
-  const handleViewJobOutput = (jobId: string, jobName: string, jobIndex: number = 0) => {
+  const handleViewJobOutput = (jobId: string) => {
+    // Set the selected job ID
     setSelectedJobId(jobId);
-    setSelectedJobName(jobName);
-    setIsLoadingOutput(true);
-    setJobOutput('');
-    setJobInput('');
-    setCurrentJobIndex(jobIndex);
-    setIsOutputDialogOpen(true);
 
-    fetchJobOutput(jobId, jobIndex);
-  };
+    // Save current page number to localStorage
+    if (projectId) {
+      localStorage.setItem(`project_${projectId}_page`, filter.page.toString());
+    }
 
-  // Fetch job output with specific index
-  const fetchJobOutput = (jobId: string, jobIndex: number = 0) => {
-    setIsLoadingOutput(true);
-
-    projectService.getJobOutput(jobId, jobIndex)
-      .then((response) => {
-        console.log('Job output response:', response);
-        if (response.data) {
-          setJobOutput(response.data.putput || 'No output available');
-          setJobInput(response.data.input || '');
-        } else {
-          setJobOutput('No output available');
-          setJobInput('');
-        }
-        setTotalJobs(response.total_jobs || 0);
-      })
-      .catch(error => {
-        console.error("Error fetching job output:", error);
-        setJobOutput('Failed to fetch job output. Please try again.');
-        setJobInput('');
-        setTotalJobs(0);
+    // Use the provided callback if available
+    if (onViewOutput) {
+      onViewOutput(jobId);
+    } else {
+      // Fallback to navigation if no callback provided
+      if (projectId && slug) {
+        navigate(`/${slug}/projects/${projectId}/jobs/${jobId}`);
+      } else {
         toast({
-          title: "Error Fetching Job Output",
-          description: "Failed to fetch job output. Please try again.",
+          title: "Error",
+          description: "Cannot view job output. Project ID is missing.",
           variant: "destructive"
         });
-      })
-      .finally(() => {
-        setIsLoadingOutput(false);
-      });
+      }
+    }
   };
+
+
   // Calculate total pages
   const totalPages = Math.ceil(meta.total / meta.page_size);
 
@@ -456,7 +429,10 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {jobs?.map((job) => (
-                  <tr key={job._id} className="hover:bg-gray-50">
+                  <tr
+                    key={job._id}
+                    className={`hover:bg-gray-50 ${selectedJobId === job._id ? 'bg-blue-50' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{job.name}</div>
                     </td>
@@ -518,7 +494,7 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
                               size="sm"
                               variant="outline"
                               className="flex items-center space-x-1"
-                              onClick={() => handleViewJobOutput(job._id, job.name)}
+                              onClick={() => handleViewJobOutput(job._id)}
                             >
                               <FileText className="h-3 w-3" />
                               <span>View Output</span>
@@ -532,7 +508,7 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
                             size="sm"
                             variant="outline"
                             className="flex items-center space-x-1"
-                            onClick={() => handleViewJobOutput(job._id, job.name)}
+                            onClick={() => handleViewJobOutput(job._id)}
                           >
                             <FileText className="h-3 w-3" />
                             <span>View Output</span>
@@ -576,89 +552,7 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
         </div>
       </div>
 
-      {/* Job Output Dialog */}
-      <Dialog open={isOutputDialogOpen} onOpenChange={setIsOutputDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Job Output: {selectedJobName}</DialogTitle>
-            <DialogDescription>
-              <div className="flex justify-between items-center">
-                <div>Job ID: {selectedJobId}</div>
-                {totalJobs > 1 && (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={currentJobIndex <= 0 || isLoadingOutput}
-                      onClick={() => {
-                        if (selectedJobId && currentJobIndex > 0) {
-                          fetchJobOutput(selectedJobId, currentJobIndex - 1);
-                        }
-                      }}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-xs">
-                      {currentJobIndex + 1} of {totalJobs}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={currentJobIndex >= totalJobs - 1 || isLoadingOutput}
-                      onClick={() => {
-                        if (selectedJobId && currentJobIndex < totalJobs - 1) {
-                          fetchJobOutput(selectedJobId, currentJobIndex + 1);
-                        }
-                      }}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </DialogDescription>
-          </DialogHeader>
 
-          {jobInput && (
-            <div className="mt-2">
-              <h4 className="text-sm font-medium mb-1">Input:</h4>
-              <div className="p-2 bg-gray-50 rounded border text-sm">
-                {jobInput.endsWith('.jpg') || jobInput.endsWith('.png') || jobInput.endsWith('.jpeg') || jobInput.endsWith('.gif') ? (
-                  <div className="flex justify-center">
-                    <img
-                      src={jobInput}
-                      alt="Input image"
-                      className="max-h-40 object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://placehold.co/400x300?text=Image+Not+Found';
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-sm">{jobInput}</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="flex-1 overflow-auto mt-4 mb-4 p-4 bg-gray-100 rounded-md">
-            <h4 className="text-sm font-medium mb-1">Output:</h4>
-            {isLoadingOutput ? (
-              <div className="flex items-center justify-center h-40">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-                <span className="ml-2 text-gray-500">Loading job output...</span>
-              </div>
-            ) : (
-              <pre className="whitespace-pre-wrap font-mono text-sm">{jobOutput}</pre>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button onClick={() => setIsOutputDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

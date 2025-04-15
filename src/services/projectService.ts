@@ -155,5 +155,17 @@ export const projectService = {
       },
       callbacks
     });
+  },
+
+  // Get job details by ID
+  getJobById: (
+    jobId: string,
+    callbacks?: ApiCallbacks
+  ) => {
+    return apiRequest({
+      url: JOBS.GET_JOB_BY_ID(jobId),
+      method: 'GET',
+      callbacks
+    });
   }
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import MainLayout from '../../components/Layout/MainLayout';
 import ProjectList from '../Projects/components/ProjectList';
@@ -11,17 +11,27 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { Search, ArrowUpDown, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ProjectsPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, projectId: urlProjectId, jobId: urlJobId } = useParams<{ slug: string; projectId?: string; jobId?: string }>();
   const { state } = useAppContext();
+  const location = useLocation();
   const navigate = useNavigate();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // No longer need jobIdRef as we're passing initialJobId directly
 
   // State to track selected project
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -117,6 +127,33 @@ const ProjectsPage: React.FC = () => {
     }
   }, [selectedProjectId, fetchProjectDetail]);
 
+  // Select project from URL parameter when component mounts
+  useEffect(() => {
+    if (urlProjectId && urlProjectId !== selectedProjectId) {
+      console.log(`Selecting project from URL: ${urlProjectId}`);
+      setSelectedProjectId(urlProjectId);
+      fetchProjectDetail(urlProjectId);
+    }
+  }, [urlProjectId, selectedProjectId, fetchProjectDetail]);
+
+  // Handle job ID parameter if present - now handled by passing initialJobId to ProjectDetail
+
+  // Handle location state when returning from job output page
+  useEffect(() => {
+    // Check if we're returning from the job output page
+    if (location.state && typeof location.state === 'object') {
+      const locationState = location.state as { returnedFromJobOutput?: boolean; pageNumber?: number };
+
+      if (locationState.returnedFromJobOutput && locationState.pageNumber) {
+        console.log(`Returning from job output page with page number: ${locationState.pageNumber}`);
+        setCurrentPage(locationState.pageNumber);
+
+        // Clear the location state to prevent reapplying on refresh
+        navigate(location.pathname, { replace: true });
+      }
+    }
+  }, [location, navigate]);
+
   // We don't need this effect anymore as fetchProjects is called in the hook
   // and will be called explicitly when filters change
 
@@ -135,6 +172,23 @@ const ProjectsPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-4">
+        {/* Breadcrumb navigation */}
+        <Breadcrumb className="mb-2">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Projects</BreadcrumbPage>
+            </BreadcrumbItem>
+            {projectDetail && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{projectDetail.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
+
         <div>
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Projects</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -260,6 +314,7 @@ const ProjectsPage: React.FC = () => {
             <ProjectDetail
               project={projectDetail}
               isLoading={isDetailLoading}
+              initialJobId={urlJobId}
             />
           </div>
         </div>

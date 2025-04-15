@@ -15,7 +15,8 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ProjectsPage = lazy(() => import("./pages/Projects"));
 const JobsPage = lazy(() => import("./pages/Jobs"));
 const UserManagementPage = lazy(() => import("./pages/UserManagement"));
-// const JobOutputPage = lazy(() => import("./pages/Jobs/components/JobOutputPage"));
+// No longer needed as we're using the ProjectsPage component for job output
+// const JobOutputPage = lazy(() => import("./pages/Projects/components/JobOutputPage"));
 
 // Loading fallback
 const PageLoader = () => (
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/:slug/dashboard" element={<Dashboard />} />
               <Route path="/:slug/projects" element={<ProjectsPage />} />
               <Route path="/:slug/projects/:projectId" element={<ProjectsPage />} />
+              <Route path="/:slug/projects/:projectId/jobs/:jobId" element={<ProjectsPage />} />
               <Route path="/:slug/jobs" element={<JobsPage />} />
               <Route path="/:slug/users" element={<UserManagementPage />} />
 
