@@ -14,3 +14,18 @@ export interface Job {
   type?: string;
   verified?: boolean;
 }
+
+export interface OutputItem {
+  type: 'text' | 'image' | 'file' | 'video' | 'audio' | 'json' | 'html';
+  content: string;
+  mime_type?: string;
+  name?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface JobOutput {
+  job_id: string;
+  output: OutputItem[];
+  metadata?: Record<string, any>;
+  created_at?: string;
+}

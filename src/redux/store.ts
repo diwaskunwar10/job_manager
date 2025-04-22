@@ -5,6 +5,7 @@ import jobsReducer from './slices/jobsSlice';
 import agentsReducer from './slices/agentsSlice';
 import tenantReducer from './slices/tenantSlice';
 import authReducer from './slices/authSlice';
+import projectJobsNavigationReducer from './slices/projectJobsNavigationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     agents: agentsReducer,
     tenant: tenantReducer,
     auth: authReducer,
+    projectJobsNavigation: projectJobsNavigationReducer,
   },
 });
 

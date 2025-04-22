@@ -1,7 +1,15 @@
+/**
+ * useProjects Hook
+ *
+ * Custom hook for managing projects data and operations.
+ * Handles fetching projects, pagination, and project details.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { projectService, Project, ProjectDetail } from '@/services/projectService';
+import { projectService } from '@/services/projectService';
+import { Project, ProjectDetail, ProjectsMeta } from '../types';
 
 export const useProjects = (
   slug: string | undefined,
@@ -15,7 +23,7 @@ export const useProjects = (
 
   // State for projects list
   const [projects, setProjects] = useState<Project[]>([]);
-  const [meta, setMeta] = useState({
+  const [meta, setMeta] = useState<ProjectsMeta>({
     total: 0,
     page: 1,
     pageSize: 10,
@@ -27,9 +35,11 @@ export const useProjects = (
   const [projectDetail, setProjectDetail] = useState<ProjectDetail | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-  // Refs to prevent multiple API calls
-  const isInitialFetchDone = useRef(false);
+  // Ref to prevent concurrent API calls
   const isFetchInProgress = useRef(false);
+
+  // Ref to track previous pagination values
+  const prevPaginationRef = useRef({ page, pageSize });
 
   // Fetch projects list
   const fetchProjects = useCallback(async () => {
@@ -45,10 +55,7 @@ export const useProjects = (
     setIsLoading(true);
 
     try {
-
       const response = await projectService.getProjects(page, pageSize);
-
-      console.log("Fetched projects:", response);
 
       setProjects(response.data || []);
 
@@ -57,13 +64,6 @@ export const useProjects = (
       // But our component expects page, pageSize, total, totalPages
       const apiMeta = response.meta || {};
       setMeta({
-        total: apiMeta.total || 0,
-        page: apiMeta.page || 1,
-        pageSize: apiMeta.page_size || 10,
-        totalPages: apiMeta.total_pages || 1
-      });
-
-      console.log("Mapped meta data:", {
         total: apiMeta.total || 0,
         page: apiMeta.page || 1,
         pageSize: apiMeta.page_size || 10,
@@ -120,7 +120,6 @@ export const useProjects = (
         // Add any other fields that might be available in the Project object
       };
 
-      console.log("Selected project from list:", projectDetail);
       setProjectDetail(projectDetail);
     } else {
       console.error("Project not found in list:", projectId);
@@ -135,14 +134,19 @@ export const useProjects = (
     setIsDetailLoading(false);
   }, [projects, toast]);
 
-  // Fetch projects only on initial load
+  // Fetch projects when pagination changes
   useEffect(() => {
-    if (!isInitialFetchDone.current) {
-      console.log('Initial projects fetch');
+    // Check if page or pageSize has changed
+    const prevPagination = prevPaginationRef.current;
+    if (prevPagination.page !== page || prevPagination.pageSize !== pageSize) {
       fetchProjects();
-      isInitialFetchDone.current = true;
+      // Update the ref with current values
+      prevPaginationRef.current = { page, pageSize };
+    } else if (!projects.length) {
+      // Initial load if no projects are loaded yet
+      fetchProjects();
     }
-  }, [fetchProjects]);
+  }, [page, pageSize, fetchProjects, projects.length]);
 
   return {
     projects,

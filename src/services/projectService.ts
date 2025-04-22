@@ -1,5 +1,7 @@
-import apiRequest, { ApiCallbacks } from '../utils/httpClient';
+import { httpBase } from '../utils/httpBase';
 import { PROJECTS, JOBS } from '../constants/apiEndpoints';
+import { Dispatch } from 'react';
+import { Action } from '../types/dispatcherTypes';
 
 export interface Project {
   _id: string;
@@ -57,30 +59,69 @@ export const projectService = {
   getProjects: (
     page: number = 1,
     pageSize: number = 10,
-    callbacks?: ApiCallbacks
+    dispatch?: Dispatch<Action>
   ) => {
-    return apiRequest({
-      url: PROJECTS.GET_PROJECTS,
-      method: 'GET',
-      params: {
-        page,
-        page_size: pageSize
+    return httpBase.get(
+      PROJECTS.GET_PROJECTS,
+      {
+        params: {
+          page,
+          limit: pageSize
+        }
       },
-      callbacks
-    });
+      dispatch
+    );
   },
 
-  // Get project details by ID (DEPRECATED)
+  // Get project details by ID
   getProjectById: (
     projectId: string,
-    callbacks?: ApiCallbacks
+    dispatch?: Dispatch<Action>
   ) => {
-    console.warn('getProjectById is deprecated. Use project from list instead.');
-    return apiRequest({
-      url: PROJECTS.PROJECT_BY_ID(projectId),
-      method: 'GET',
-      callbacks
-    });
+    return httpBase.get(
+      PROJECTS.PROJECT_BY_ID(projectId),
+      undefined,
+      dispatch
+    );
+  },
+
+  // Create a new project
+  createProject: (
+    projectData: { name: string; description: string },
+    dispatch?: Dispatch<Action>
+  ) => {
+    return httpBase.post(
+      PROJECTS.CREATE_PROJECT,
+      projectData,
+      undefined,
+      dispatch
+    );
+  },
+
+  // Update a project
+  updateProject: (
+    projectId: string,
+    projectData: { name?: string; description?: string },
+    dispatch?: Dispatch<Action>
+  ) => {
+    return httpBase.put(
+      PROJECTS.UPDATE_PROJECT(projectId),
+      projectData,
+      undefined,
+      dispatch
+    );
+  },
+
+  // Delete a project
+  deleteProject: (
+    projectId: string,
+    dispatch?: Dispatch<Action>
+  ) => {
+    return httpBase.delete(
+      PROJECTS.DELETE_PROJECT(projectId),
+      undefined,
+      dispatch
+    );
   },
 
   // Get jobs by project ID with filtering and pagination
@@ -92,68 +133,94 @@ export const projectService = {
       searchQuery?: string;
       page?: number;
       pageSize?: number;
+      createdAtStart?: string;
+      createdAtEnd?: string;
     },
-    callbacks?: ApiCallbacks
+    dispatch?: Dispatch<Action>
   ) => {
     const {
       jobStatus,
       verified,
       searchQuery,
       page = 1,
-      pageSize = 10
+      pageSize = 10,
+      createdAtStart,
+      createdAtEnd
     } = options || {};
 
-    return apiRequest({
-      url: JOBS.JOBS_BY_PROJECT(projectId),
-      method: 'GET',
-      params: {
-        page,
-        page_size: pageSize,
-        ...(jobStatus && { job_status: jobStatus }),
-        ...(verified !== undefined && { verified }),
-        ...(searchQuery && { search_query: searchQuery })
+    return httpBase.get(
+      PROJECTS.PROJECT_JOBS(projectId),
+      {
+        params: {
+          page,
+          limit: pageSize,
+          ...(jobStatus && { status: jobStatus }),
+          ...(verified !== undefined && { verified }),
+          ...(searchQuery && { search: searchQuery }),
+          ...(createdAtStart && { created_at_start: createdAtStart }),
+          ...(createdAtEnd && { created_at_end: createdAtEnd })
+        }
       },
-      callbacks
-    });
+      dispatch
+    );
+  },
+
+  // Create a job for a project
+  createJob: (
+    projectId: string,
+    jobData: { name: string; description: string; process_name: string },
+    dispatch?: Dispatch<Action>
+  ) => {
+    return httpBase.post(
+      JOBS.CREATE_JOB(projectId),
+      jobData,
+      undefined,
+      dispatch
+    );
   },
 
   // Execute a job
   executeJob: (
     jobId: string,
-    callbacks?: ApiCallbacks
+    dispatch?: Dispatch<Action>
   ) => {
-    return apiRequest({
-      url: JOBS.EXECUTE_JOB(jobId),
-      method: 'POST',
-      callbacks
-    });
+    return httpBase.post(
+      JOBS.EXECUTE_JOB(jobId),
+      undefined,
+      undefined,
+      dispatch
+    );
   },
 
   // Re-execute a job
   reExecuteJob: (
     jobId: string,
-    callbacks?: ApiCallbacks
+    dispatch?: Dispatch<Action>
   ) => {
-    return apiRequest({
-      url: JOBS.RE_EXECUTE_JOB(jobId),
-      method: 'POST',
-      callbacks
-    });
+    return httpBase.post(
+      JOBS.RE_EXECUTE_JOB(jobId),
+      undefined,
+      undefined,
+      dispatch
+    );
   },
 
   // Get job output
   getJobOutput: (
     jobId: string,
-    jobIndex: number = 0,
-    callbacks?: ApiCallbacks
+    includePresignedUrls: boolean = false,
+    expiry: number = 3600,
+    dispatch?: Dispatch<Action>
   ) => {
-    return apiRequest({
-      url: JOBS.JOB_OUTPUT(jobId),
-      method: 'GET',
-      params: {
-        job_index: jobIndex
+    return httpBase.get(
+      JOBS.JOB_OUTPUT(jobId),
+      {
+        params: {
+          include_presigned_urls: includePresignedUrls,
+          expiry
+        }
       },
-      callbacks
-    });
+      dispatch
+    );
   }
 };

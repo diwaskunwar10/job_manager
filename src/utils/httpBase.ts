@@ -16,20 +16,6 @@ const httpClient: AxiosInstance = axios.create({
 // Request interceptor
 httpClient.interceptors.request.use(
   (config) => {
-    // Get tenant details from localStorage
-    const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
-    const tenant = tenantDetails ? JSON.parse(tenantDetails) : null;
-    const slug = localStorage.getItem('aroma_slug');
-
-    // Add tenant_id and slug as query params if available
-    if (tenant && tenant.tenant_id) {
-      config.params = {
-        ...config.params,
-        tenant_id: tenant.tenant_id,
-        client_id: slug || 'string'
-      };
-    }
-
     // Add authorization header if token exists
     const token = localStorage.getItem(API_CONFIG.AUTH_TOKEN_KEY);
     if (token) {

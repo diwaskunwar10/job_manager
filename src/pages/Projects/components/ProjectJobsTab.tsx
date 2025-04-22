@@ -3,12 +3,26 @@ import React, { useEffect } from 'react';
 import ProjectJobs from './ProjectJobs';
 import { useProjectJobs } from '../hooks/useProjectJobs';
 import { Job as JobType } from '@/types/job'; // Using Job from types/job.ts
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { saveNavigationState } from '@/redux/slices/projectJobsNavigationSlice';
 
 interface ProjectJobsTabProps {
   projectId: string;
+  onViewJobOutput?: (jobId: string, jobName: string) => void;
 }
 
-const ProjectJobsTab: React.FC<ProjectJobsTabProps> = ({ projectId }) => {
+const ProjectJobsTab: React.FC<ProjectJobsTabProps> = ({ projectId, onViewJobOutput }) => {
+  const dispatch = useAppDispatch();
+  const savedNavigation = useAppSelector(state => state.projectJobsNavigation);
+
+  // Initialize with saved state or default values
+  const initialFilter = {
+    page: savedNavigation.projectId === projectId ? savedNavigation.page : 1,
+    pageSize: savedNavigation.projectId === projectId ? savedNavigation.pageSize : 10,
+    jobStatus: savedNavigation.projectId === projectId ? savedNavigation.jobStatus : undefined,
+    searchQuery: savedNavigation.projectId === projectId ? savedNavigation.searchQuery : undefined,
+  };
+
   const {
     jobs,
     meta,
@@ -16,7 +30,7 @@ const ProjectJobsTab: React.FC<ProjectJobsTabProps> = ({ projectId }) => {
     filter,
     updateFilter,
     fetchJobs
-  } = useProjectJobs(projectId);
+  } = useProjectJobs(projectId, initialFilter);
 
   useEffect(() => {
     if (projectId) {
@@ -24,6 +38,20 @@ const ProjectJobsTab: React.FC<ProjectJobsTabProps> = ({ projectId }) => {
       fetchJobs();
     }
   }, [projectId, fetchJobs]);
+
+  // Save navigation state when filter changes
+  useEffect(() => {
+    if (projectId) {
+      dispatch(saveNavigationState({
+        activeTab: 'jobs',
+        projectId,
+        page: filter.page,
+        pageSize: filter.pageSize,
+        jobStatus: filter.jobStatus,
+        searchQuery: filter.searchQuery,
+      }));
+    }
+  }, [dispatch, projectId, filter]);
 
   return (
     <div className="flex-1 overflow-hidden">
@@ -37,6 +65,7 @@ const ProjectJobsTab: React.FC<ProjectJobsTabProps> = ({ projectId }) => {
             onFilterChange={updateFilter}
             pageSizeOptions={[5, 10, 20, 50]}
             projectId={projectId}
+            onViewJobOutput={onViewJobOutput}
           />
         </div>
       ) : (

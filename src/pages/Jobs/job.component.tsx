@@ -3,30 +3,11 @@ import MainLayout from '../../components/Layout/MainLayout';
 import JobListComponent from './components/JobListComponent';
 import AssignmentComponent from './components/AssignmentComponent';
 import AgentListComponent from './components/AgentListComponent';
-import JobService from '../../services/job.service';
+import JobService from '../../services/jobService';
+import { Job } from '../../types/job';
+import { Agent } from '../../types/agent';
 
-// Define types locally to avoid import issues
-interface Job {
-  _id: string;
-  id: string; // Required for backward compatibility
-  name: string;
-  description?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  project_id: string;
-  project_name: string;
-  created_at: string;
-  executed_at?: string;
-  completed_at?: string;
-}
-
-interface Agent {
-  _id: string;
-  username: string;
-  role: string;
-  created_at: string;
-  status?: 'available' | 'busy' | 'offline';
-  created_by: string;
-}
+// Component props interface
 interface JobComponentProps {
   tenantName: string;
 }

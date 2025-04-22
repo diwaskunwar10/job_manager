@@ -1,24 +1,52 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { ProjectDetail as ProjectDetailType } from '@/services/projectService';
+import EditProjectDialog from './EditProjectDialog';
+import DeleteProjectButton from './DeleteProjectButton';
 
 interface ProjectDetailHeaderProps {
   project: ProjectDetailType;
   onNewJobClick: () => void;
+  onProjectUpdated?: (project: any) => void;
+  onProjectDeleted?: () => void;
 }
 
-const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({ project, onNewJobClick }) => {
+const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
+  project,
+  onNewJobClick,
+  onProjectUpdated,
+  onProjectDeleted
+}) => {
   return (
     <div className="p-6 border-b flex-shrink-0">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
-        <Button
-          onClick={onNewJobClick}
-          className="flex items-center gap-1">
-          <Plus className="h-4 w-4" /> New Job
-        </Button>
+        <div className="flex items-center gap-2">
+          <EditProjectDialog
+            projectId={project._id}
+            projectData={{
+              name: project.name,
+              description: project.description
+            }}
+            onProjectUpdated={onProjectUpdated}
+            trigger={
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
+                <Edit className="h-4 w-4" /> Edit
+              </Button>
+            }
+          />
+          <DeleteProjectButton
+            projectId={project._id}
+            projectName={project.name}
+            onProjectDeleted={onProjectDeleted}
+          />
+          <Button
+            onClick={onNewJobClick}
+            className="flex items-center gap-1">
+            <Plus className="h-4 w-4" /> New Job
+          </Button>
+        </div>
       </div>
       <div className="mt-2 flex items-center">
         {project.status && (

@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, ArrowUpDown, Plus } from 'lucide-react';
+import NewProjectDialog from './NewProjectDialog';
 import { format } from 'date-fns';
 
 interface FilterBarProps {
@@ -19,6 +19,7 @@ interface FilterBarProps {
   onEndDateChange: (date: Date | undefined) => void;
   onApplyFilters: () => void;
   onResetFilters: () => void;
+  onProjectCreated?: (project: any) => void;
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({
@@ -31,7 +32,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onStartDateChange,
   onEndDateChange,
   onApplyFilters,
-  onResetFilters
+  onResetFilters,
+  onProjectCreated
 }) => {
   // Animation for search placeholder
   const [placeholder, setPlaceholder] = useState('');
@@ -85,23 +87,15 @@ const FilterBar: React.FC<FilterBarProps> = ({
           <ArrowUpDown className="h-4 w-4" />
         </Button>
 
-        <Dialog>
-          <DialogTrigger asChild>
+        <NewProjectDialog
+          onProjectCreated={onProjectCreated}
+          trigger={
             <Button variant="default" size="sm">
               <Plus className="mr-1 h-4 w-4" />
               New Project
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              {/* Project creation form would go here */}
-              <p className="text-sm text-gray-500">Project creation form placeholder</p>
-            </div>
-          </DialogContent>
-        </Dialog>
+          }
+        />
       </div>
 
       <div className="flex space-x-2">

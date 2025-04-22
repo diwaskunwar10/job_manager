@@ -16,7 +16,15 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    port: 8080,
-    host: '::'
+    port: 3000,
+    host: '::',
+    proxy: {
+      '/v1': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
+      }
+    }
   }
 }))

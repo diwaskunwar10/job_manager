@@ -1,7 +1,12 @@
 
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import JobService from '../../services/jobService';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { AGENTS, JOBS } from '../../constants/apiEndpoints';
 import { Agent } from '../../types/agent';
+import {
+  createGetApiAction,
+  createPostApiAction,
+  createDeleteApiAction
+} from '../apiActionCreator';
 
 interface AgentsState {
   agents: Agent[];
@@ -31,70 +36,79 @@ const initialState: AgentsState = {
   },
 };
 
-// Async thunks for agents
-export const fetchAgents = createAsyncThunk(
-  'agents/fetchAgents',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await JobService.getAllAgents();
-      return response;
-    } catch (error) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('An unknown error occurred');
-    }
-  }
+// API action creators
+export const getAllAgentsApi = createGetApiAction<Agent[] | { agents: Agent[] }>(
+  'agents/getAllAgents',
+  AGENTS.GET_ALL_AGENTS
 );
 
-export const fetchAssignedAgents = createAsyncThunk(
-  'agents/fetchAssignedAgents',
-  async (jobId: string, { rejectWithValue }) => {
-    try {
-      const response = await JobService.getAssignedAgents(jobId);
-      return response;
-    } catch (error) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('An unknown error occurred');
-    }
-  }
+export const getAssignedAgentsApi = createGetApiAction<{ data: Agent[] }, string>(
+  'agents/getAssignedAgents',
+  (jobId) => JOBS.GET_ASSIGNED_AGENTS(jobId)
 );
 
-export const assignAgent = createAsyncThunk(
-  'agents/assignAgent',
-  async ({ jobId, agentId }: { jobId: string, agentId: string }, { rejectWithValue, dispatch }) => {
-    try {
-      await JobService.assignAgentToJob(jobId, agentId);
+export const assignAgentToJobApi = createPostApiAction<any, { jobId: string, agentId: string }>(
+  'agents/assignAgentToJob',
+  ({ jobId }) => JOBS.ASSIGN_AGENT(jobId)
+);
+
+export const removeAgentFromJobApi = createDeleteApiAction<any, { jobId: string, agentId: string }>(
+  'agents/removeAgentFromJob',
+  ({ jobId, agentId }) => JOBS.UNASSIGN_AGENT(jobId, agentId)
+);
+
+// Thunk action creators that use the API action creators
+export const fetchAgents = () => (dispatch: any) => {
+  dispatch(getAllAgentsApi({
+    successCallback: (response) => {
+      // No additional actions needed as the slice handles the state updates
+    },
+    failureCallback: (error) => {
+      console.error('Error fetching agents:', error);
+    }
+  }));
+};
+
+export const fetchAssignedAgents = (jobId: string) => (dispatch: any) => {
+  dispatch(getAssignedAgentsApi({
+    additionalParams: jobId,
+    successCallback: (response) => {
+      // No additional actions needed as the slice handles the state updates
+    },
+    failureCallback: (error) => {
+      console.error('Error fetching assigned agents:', error);
+    }
+  }));
+};
+
+export const assignAgent = ({ jobId, agentId }: { jobId: string, agentId: string }) => (dispatch: any) => {
+  dispatch(assignAgentToJobApi({
+    additionalParams: { jobId, agentId },
+    params: {
+      agent_id: agentId
+    },
+    successCallback: () => {
       // Refresh assigned agents after assignment
       dispatch(fetchAssignedAgents(jobId));
-      return { success: true };
-    } catch (error) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('An unknown error occurred');
+    },
+    failureCallback: (error) => {
+      console.error('Error assigning agent:', error);
     }
-  }
-);
+  }));
+};
 
-export const unassignAgent = createAsyncThunk(
-  'agents/unassignAgent',
-  async ({ jobId, agentId }: { jobId: string, agentId: string }, { rejectWithValue, dispatch }) => {
-    try {
-      await JobService.removeAgentFromJob(jobId, agentId);
+export const unassignAgent = ({ jobId, agentId }: { jobId: string, agentId: string }) => (dispatch: any) => {
+  dispatch(removeAgentFromJobApi({
+    additionalParams: { jobId, agentId },
+    successCallback: () => {
       // Refresh assigned agents after unassignment
       dispatch(fetchAssignedAgents(jobId));
-      return { agentId };
-    } catch (error) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('An unknown error occurred');
+    },
+    failureCallback: (error) => {
+      console.error('Error unassigning agent:', error);
     }
-  }
-);
+  }));
+};
 
 const agentsSlice = createSlice({
   name: 'agents',
@@ -113,70 +127,63 @@ const agentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all agents
-      .addCase(fetchAgents.pending, (state) => {
+      // Get all agents
+      .addCase(getAllAgentsApi.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchAgents.fulfilled, (state, action) => {
+      .addCase(getAllAgentsApi.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Handle different response formats
         if (Array.isArray(action.payload)) {
           state.agents = action.payload;
           state.meta.totalPages = Math.ceil(action.payload.length / state.meta.pageSize);
         } else if (action.payload.agents && Array.isArray(action.payload.agents)) {
           state.agents = action.payload.agents;
-          if (action.payload.total_agents) {
+          if ('total_agents' in action.payload) {
             state.meta.totalPages = Math.ceil(action.payload.total_agents / state.meta.pageSize);
           } else {
             state.meta.totalPages = Math.ceil(action.payload.agents.length / state.meta.pageSize);
-          }
-        } else if (action.payload.data && Array.isArray(action.payload.data)) {
-          state.agents = action.payload.data;
-          if (action.payload.meta && action.payload.meta.total_pages) {
-            state.meta.totalPages = action.payload.meta.total_pages;
-          } else {
-            state.meta.totalPages = Math.ceil(action.payload.data.length / state.meta.pageSize);
           }
         } else {
           state.agents = [];
         }
       })
-      .addCase(fetchAgents.rejected, (state, action) => {
+      .addCase(getAllAgentsApi.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
-      // Fetch assigned agents
-      .addCase(fetchAssignedAgents.pending, (state) => {
+
+      // Get assigned agents
+      .addCase(getAssignedAgentsApi.pending, (state) => {
         state.isAssignedAgentsLoading = true;
         state.error = null;
       })
-      .addCase(fetchAssignedAgents.fulfilled, (state, action) => {
+      .addCase(getAssignedAgentsApi.fulfilled, (state, action) => {
         state.isAssignedAgentsLoading = false;
-        
+
         // Handle different response formats
-        if (Array.isArray(action.payload)) {
-          state.assignedAgents = action.payload;
-        } else if (action.payload.data && Array.isArray(action.payload.data)) {
+        if (action.payload && action.payload.data) {
           state.assignedAgents = action.payload.data;
+        } else if (Array.isArray(action.payload)) {
+          state.assignedAgents = action.payload;
         } else {
           state.assignedAgents = [];
         }
       })
-      .addCase(fetchAssignedAgents.rejected, (state, action) => {
+      .addCase(getAssignedAgentsApi.rejected, (state, action) => {
         state.isAssignedAgentsLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Handle assign agent - no state changes needed as we're refreshing the list
-      .addCase(assignAgent.rejected, (state, action) => {
+      .addCase(assignAgentToJobApi.rejected, (state, action) => {
         state.error = action.payload as string;
       })
-      
+
       // Handle unassign agent - no state changes needed as we're refreshing the list
-      .addCase(unassignAgent.rejected, (state, action) => {
+      .addCase(removeAgentFromJobApi.rejected, (state, action) => {
         state.error = action.payload as string;
       });
   },

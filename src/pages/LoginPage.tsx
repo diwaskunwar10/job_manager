@@ -3,18 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '@/hooks/use-toast';
-// Import httpBase removed as it's not used
-import { API_CONFIG } from '../config/environment';
-import axios from 'axios';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { login } from '../redux/actions/authActions';
+import { selectIsAuthenticated, selectAuthLoading, selectAuthError } from '../redux/slices/authSlice';
 
 const LoginPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { state, loginUser } = useAppContext();
+  const { state } = useAppContext();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Get auth state from Redux
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isLoading = useAppSelector(selectAuthLoading);
+  const authError = useAppSelector(selectAuthError);
 
   useEffect(() => {
     // If tenant not loaded, redirect to tenant page
@@ -22,11 +27,11 @@ const LoginPage: React.FC = () => {
       navigate(`/${slug}`);
     }
 
-    // Don't automatically redirect if already authenticated
-    // if (state.isAuthenticated) {
-    //   navigate(`/${slug}/dashboard`);
-    // }
-  }, [slug, navigate, state.tenant]);
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate(`/${slug}/dashboard`);
+    }
+  }, [slug, navigate, state.tenant, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,52 +45,37 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    try {
-      setIsLoading(true);
+    // Store slug in localStorage
+    localStorage.setItem('aroma_slug', slug || '');
 
-      // Store slug
-      localStorage.setItem('aroma_slug', slug || '');
+    // Use Redux login action with client_id
+    dispatch(login(
+      {
+        username: email,
+        password,
+        client_id: slug || 'string',
+        grant_type: 'password',
+        scope: ''
+      },
+      // Success callback
+      () => {
+        toast({
+          title: "Login Successful",
+          description: "You have been logged in successfully.",
+        });
 
-      // Make login API call with URLSearchParams
-      const response = await axios.post(
-        `${API_CONFIG.BASE_URL}/login`,
-        new URLSearchParams({
-          'grant_type': 'password',
-          'username': email,
-          'password': password,
-          'scope': '',
-          'client_id': slug || 'string' // Use slug as client_id if available
-        }),
-        {
-          headers: {
-            'accept': 'application/json'
-          }
-        }
-      );
-
-      // Store the auth token using the consistent key from API_CONFIG
-      localStorage.setItem(API_CONFIG.AUTH_TOKEN_KEY, response.data.access_token);
-
-      // Call loginUser to update state and handle navigation
-      await loginUser(email, password);
-
-      toast({
-        title: "Login Successful",
-        description: "You have been logged in successfully.",
-      });
-
-      // Let the user decide where to go next
-      navigate(`/${slug}/dashboard`);
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login Failed",
-        description: error instanceof Error ? error.message : "Failed to log in. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+        // Navigate to dashboard
+        navigate(`/${slug}/dashboard`);
+      },
+      // Error callback
+      (errorMessage) => {
+        toast({
+          title: "Login Failed",
+          description: errorMessage || "Failed to log in. Please try again.",
+          variant: "destructive",
+        });
+      }
+    ));
   };
 
   if (!state.tenant) {

@@ -1,14 +1,24 @@
 
+/**
+ * Projects Container
+ *
+ * Main container component for the Projects module. This component manages the state
+ * and data flow for the Projects page, including pagination, filtering, and project selection.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { useProjects } from '../hooks/useProjects';
-import ProjectLayout from '../components/ProjectLayout';
+import { useToast } from '@/hooks/use-toast';
+import ProjectLayout from '../components/common/ProjectLayout';
+import { Project } from '../types';
 
 const ProjectsContainer: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { state } = useAppContext();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,11 +46,13 @@ const ProjectsContainer: React.FC = () => {
 
   // Handle page change
   const handlePageChange = (page: number) => {
+    console.log(`ProjectsContainer: Changing page from ${currentPage} to ${page}`);
     setCurrentPage(page);
   };
 
   // Handle page size change
   const handlePageSizeChange = (size: number) => {
+    console.log(`ProjectsContainer: Changing page size from ${pageSize} to ${size}`);
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
   };
@@ -70,6 +82,20 @@ const ProjectsContainer: React.FC = () => {
     setEndDate(undefined);
     // Explicitly call fetchProjects when filters are reset
     fetchProjects();
+  };
+
+  // Handle project creation
+  const handleProjectCreated = (project: Project) => {
+    toast({
+      title: "Project Created",
+      description: `Project "${project.name}" has been created successfully.`
+    });
+    // Refresh projects list
+    fetchProjects();
+    // Select the newly created project
+    if (project._id) {
+      handleProjectSelect(project._id);
+    }
   };
 
   // Redirect if tenant not loaded
@@ -107,6 +133,7 @@ const ProjectsContainer: React.FC = () => {
       onEndDateChange={setEndDate}
       onApplyFilters={applyFilters}
       onResetFilters={resetFilters}
+      onProjectCreated={handleProjectCreated}
     />
   );
 };

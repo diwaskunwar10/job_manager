@@ -1,16 +1,14 @@
+/**
+ * useProjectJobs Hook
+ *
+ * Custom hook for managing project jobs data and operations.
+ * Handles fetching jobs, pagination, filtering, and job details.
+ */
 
 import { useState, useCallback } from 'react';
-import { Job as JobType } from '@/types/job';
 import { projectService } from '@/services/projectService';
 import { useToast } from '@/hooks/use-toast';
-
-export interface JobsFilter {
-  jobStatus?: 'pending' | 'failed' | 'completed' | 'in-progress';
-  verified?: boolean;
-  searchQuery?: string;
-  page: number;
-  pageSize: number;
-}
+import { Job, JobsFilter } from '../types';
 
 interface JobsMeta {
   total: number;
@@ -18,12 +16,14 @@ interface JobsMeta {
   page_size: number;
 }
 
-export const useProjectJobs = (projectId?: string) => {
-  const [jobs, setJobs] = useState<JobType[]>([]);
+export const useProjectJobs = (projectId?: string, initialFilter?: Partial<JobsFilter>) => {
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<JobsFilter>({
-    page: 1,
-    pageSize: 10,
+    page: initialFilter?.page || 1,
+    pageSize: initialFilter?.pageSize || 10,
+    jobStatus: initialFilter?.jobStatus,
+    searchQuery: initialFilter?.searchQuery,
   });
   const [meta, setMeta] = useState<JobsMeta & {projectId?: string}>({
     total: 0,
@@ -35,12 +35,12 @@ export const useProjectJobs = (projectId?: string) => {
   // Fetch jobs based on current filters
   const fetchJobs = useCallback(async () => {
     if (!projectId) return;
-    
+
     setIsLoading(true);
     try {
       const response = await projectService.getJobsByProject(projectId, filter);
       setJobs(response.data || []);
-      
+
       // Update meta information
       if (response.meta) {
         setMeta({
@@ -69,8 +69,8 @@ export const useProjectJobs = (projectId?: string) => {
       ...prev,
       ...newFilter,
       // If filter changes other than page, reset to page 1
-      page: 'page' in newFilter ? newFilter.page! : 
-        ('jobStatus' in newFilter || 'verified' in newFilter || 
+      page: 'page' in newFilter ? newFilter.page! :
+        ('jobStatus' in newFilter || 'verified' in newFilter ||
         'searchQuery' in newFilter || 'pageSize' in newFilter) ? 1 : prev.page,
     }));
   }, []);

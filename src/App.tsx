@@ -1,7 +1,11 @@
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import NotFoundPage from "./pages/NotFoundPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { setupGlobalAuthErrorHandler } from "./utils/authErrorHandler";
+import { useAppDispatch } from "./redux/hooks";
+import { checkAuthStatus } from "./redux/actions/authActions";
 
 // Lazy load pages for better performance
 const TenantSlugPage = lazy(() => import("./pages/TenantSlugPage"));
@@ -22,27 +26,66 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-  <Suspense fallback={<PageLoader />}>
-    <Routes>
-      {/* Index route - redirect to 404 if accessed directly */}
-      <Route path="/" element={<Navigate to="/404" />} />
+const App = () => {
+  const dispatch = useAppDispatch();
 
-      {/* Tenant routes */}
-      <Route path="/:slug" element={<TenantSlugPage />} />
-      <Route path="/:slug/login" element={<LoginPage />} />
-      <Route path="/:slug/dashboard" element={<Dashboard />} />
-      <Route path="/:slug/projects" element={<ProjectsPage />} />
-      <Route path="/:slug/projects/:projectId" element={<ProjectsPage />} />
-      <Route path="/:slug/jobs" element={<JobsPage />} />
-      <Route path="/:slug/jobs/:jobId/output" element={<JobOutputPage />} />
-      <Route path="/:slug/users" element={<UserManagementPage />} />
+  // Check authentication status on mount
+  useEffect(() => {
+    // Set up global auth error handler
+    setupGlobalAuthErrorHandler();
 
-      {/* 404 page */}
-      <Route path="/404" element={<NotFoundPage />} />
-      <Route path="*" element={<Navigate to="/404" />} />
-    </Routes>
-  </Suspense>
-);
+    // Check authentication status
+    dispatch(checkAuthStatus() as any);
+  }, [dispatch]);
+
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* Index route - redirect to 404 if accessed directly */}
+        <Route path="/" element={<Navigate to="/404" />} />
+
+        {/* Public routes */}
+        <Route path="/:slug" element={<TenantSlugPage />} />
+        <Route path="/:slug/login" element={<LoginPage />} />
+        <Route path="/404" element={<NotFoundPage />} />
+
+        {/* Protected routes */}
+        <Route path="/:slug/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/:slug/projects" element={
+          <ProtectedRoute>
+            <ProjectsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/:slug/projects/:projectId" element={
+          <ProtectedRoute>
+            <ProjectsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/:slug/jobs" element={
+          <ProtectedRoute>
+            <JobsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/:slug/jobs/:jobId/output" element={
+          <ProtectedRoute>
+            <JobOutputPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/:slug/users" element={
+          <ProtectedRoute requiredRole="admin">
+            <UserManagementPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/404" />} />
+      </Routes>
+    </Suspense>
+  );
+};
 
 export default App;
