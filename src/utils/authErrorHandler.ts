@@ -8,28 +8,28 @@ import { store } from '../redux/store';
  */
 export const handleAuthError = (error: any): boolean => {
   // Check if the error is an auth error
-  const isAuthError = 
-    (error && (error as any).isAuthError) || 
+  const isAuthError =
+    (error && (error as any).isAuthError) ||
     (error && error.message && error.message.includes('401: Unauthorized')) ||
     (error && error.response && (error.response.status === 401 || error.response.status === 403));
-  
+
   if (isAuthError) {
     // Get tenant slug
     let tenantSlug = (error as any).tenantSlug || localStorage.getItem('aroma_tenant_slug') || '';
-    
+
     // Dispatch logout action
     store.dispatch(logout());
-    
-    // Redirect to login page
+
+    // Redirect to logout page
     if (tenantSlug) {
-      window.location.href = `/${tenantSlug}/login`;
+      window.location.href = `/${tenantSlug}/logout`;
     } else {
-      window.location.href = '/login';
+      window.location.href = '/404';
     }
-    
+
     return true;
   }
-  
+
   return false;
 };
 

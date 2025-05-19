@@ -24,13 +24,19 @@ export const JOBS = {
   // Re-execute a job
   RE_EXECUTE_JOB: (jobId: string) => `/jobs/reexecute/${jobId}`,
 
-  // Get job output
-  JOB_OUTPUT: (jobId: string) => `/jobs/output/${jobId}`,
+  // Get job output (Aroma Backend v2)
+  JOB_OUTPUT: (jobId: string) => `/jobs/${jobId}/items`,
+
+  // Get media content by ID (Aroma Backend v2)
+  MEDIA_CONTENT: (mediaId: string) => `/media/${mediaId}`,
 
   // Get presigned URL for media object
   MEDIA_PRESIGNED_URL: "/jobs/media/presigned-url",
 
-  // Add media from URI to job
+  // Add media to job (supports both URLs and file uploads)
+  ADD_MEDIA: (jobId: string) => `/jobs/add-media/${jobId}`,
+
+  // Add media from URI to job (legacy)
   ADD_MEDIA_FROM_URI: (jobId: string) => `/jobs/add-media-from-uri/${jobId}`,
 
   // Assign agent to job

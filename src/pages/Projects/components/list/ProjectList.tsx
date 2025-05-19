@@ -55,9 +55,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
     return (
       <div className="flex items-center space-x-2 text-sm">
-        <span className="text-gray-600">
-          Page {currentPage} of {totalPages}
-        </span>
         <Pagination>
           <PaginationContent>
             <PaginationItem>
@@ -199,13 +196,13 @@ const ProjectList: React.FC<ProjectListProps> = ({
               value={String(meta.pageSize)}
               onValueChange={(value) => onPageSizeChange(Number(value))}
             >
-              <SelectTrigger className="w-[110px] rounded-lg text-xs">
-                <SelectValue placeholder="Page Size" />
+              <SelectTrigger className="w-[80px] rounded-lg text-xs">
+                <SelectValue placeholder="Items" />
               </SelectTrigger>
               <SelectContent className="rounded-lg">
                 {pageSizeOptions.map(size => (
                   <SelectItem key={size} value={String(size)}>
-                    {size} per page
+                    {size}
                   </SelectItem>
                 ))}
               </SelectContent>

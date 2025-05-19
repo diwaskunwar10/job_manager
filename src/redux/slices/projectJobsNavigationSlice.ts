@@ -9,6 +9,7 @@ interface ProjectJobsNavigationState {
   searchQuery?: string;
   createdAtStart?: string;
   createdAtEnd?: string;
+  selectedJobId?: string | null;
 }
 
 const initialState: ProjectJobsNavigationState = {
@@ -34,6 +35,9 @@ const projectJobsNavigationSlice = createSlice({
     setJobsPageSize: (state, action: PayloadAction<number>) => {
       state.pageSize = action.payload;
     },
+    setSelectedJobId: (state, action: PayloadAction<string | null>) => {
+      state.selectedJobId = action.payload;
+    },
     setJobsFilter: (state, action: PayloadAction<{
       jobStatus?: 'pending' | 'failed' | 'completed' | 'in-progress';
       searchQuery?: string;
@@ -54,6 +58,7 @@ const projectJobsNavigationSlice = createSlice({
       searchQuery?: string;
       createdAtStart?: string;
       createdAtEnd?: string;
+      selectedJobId?: string | null;
     }>) => {
       return {
         ...state,
@@ -68,6 +73,7 @@ export const {
   setProjectId,
   setJobsPage,
   setJobsPageSize,
+  setSelectedJobId,
   setJobsFilter,
   saveNavigationState,
 } = projectJobsNavigationSlice.actions;

@@ -3,20 +3,18 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 const UserProfile: React.FC = () => {
-  const { 
-    user, 
-    isAuthenticated, 
-    getUserRole, 
-    getTenantLabel, 
-    logoutUser 
+  const {
+    user,
+    isAuthenticated,
+    getUserRole,
+    getTenantLabel,
+    logoutUser
   } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logoutUser(() => {
-      // Navigate to login page after logout
-      navigate(`/${user?.tenant_slug || ''}/login`);
-    });
+    // Navigate to logout page
+    navigate(`/${user?.tenant_slug || ''}/logout`);
   };
 
   if (!isAuthenticated || !user) {
@@ -35,7 +33,7 @@ const UserProfile: React.FC = () => {
           <p className="text-sm text-gray-500">Tenant: {getTenantLabel()}</p>
         </div>
       </div>
-      
+
       <div className="mt-4 pt-4 border-t border-gray-200">
         <button
           onClick={handleLogout}

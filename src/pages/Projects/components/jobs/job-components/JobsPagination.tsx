@@ -78,9 +78,6 @@ const JobsPagination: React.FC<JobsPaginationProps> = ({
 
     return (
       <div className="flex flex-col sm:flex-row items-center gap-2">
-        <div className="text-sm text-gray-500 mb-2 sm:mb-0">
-          Page {filter.page} of {totalPages}
-        </div>
 
         <Pagination>
           <PaginationContent>
@@ -199,22 +196,22 @@ const JobsPagination: React.FC<JobsPaginationProps> = ({
     <div className="p-5 border-t bg-white flex-shrink-0 shadow-sm">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="w-full md:w-auto flex items-center gap-3">
-          <div className="text-sm font-medium text-gray-600">Show:</div>
+
           <Select
             value={String(filter.pageSize)}
             onValueChange={(value) => onFilterChange({ pageSize: Number(value) })}
           >
-            <SelectTrigger className="w-[120px] rounded-lg bg-white border-gray-200">
-              <SelectValue placeholder="Page Size" />
+            <SelectTrigger className="w-[80px] rounded-lg bg-white border-gray-200">
+              <SelectValue placeholder="Items" />
             </SelectTrigger>
             <SelectContent className="rounded-lg">
               {pageSizeOptions.map(size => (
-                <SelectItem key={size} value={String(size)}>{size} per page</SelectItem>
+                <SelectItem key={size} value={String(size)}>{size}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="text-sm text-gray-600 hidden md:block">
-            Showing <span className="font-medium">{Math.min((filter.page - 1) * filter.pageSize + 1, meta.total)} - {Math.min(filter.page * filter.pageSize, meta.total)}</span> of <span className="font-medium">{meta.total}</span> items
+            <span className="font-medium">{Math.min((filter.page - 1) * filter.pageSize + 1, meta.total)}-{Math.min(filter.page * filter.pageSize, meta.total)}</span>/<span className="font-medium">{meta.total}</span>
           </div>
         </div>
         <div className="w-full md:w-auto">

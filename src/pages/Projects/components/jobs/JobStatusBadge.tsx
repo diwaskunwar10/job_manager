@@ -1,25 +1,25 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  Play, 
+import {
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Play,
   Pause,
   HelpCircle
 } from 'lucide-react';
 
-type JobStatus = 'pending' | 'in-progress' | 'completed' | 'failed' | 'paused' | string;
+type JobStatus = 'pending' | 'in-progress' | 'completed' | 'failed' | 'paused' | string | undefined;
 
 interface JobStatusBadgeProps {
-  status: JobStatus;
+  status?: JobStatus;
   className?: string;
 }
 
-const JobStatusBadge: React.FC<JobStatusBadgeProps> = ({ status, className = '' }) => {
+const JobStatusBadge: React.FC<JobStatusBadgeProps> = ({ status = 'pending', className = '' }) => {
   // Normalize status to lowercase and handle hyphenated variants
-  const normalizedStatus = status.toLowerCase().replace('-', '');
-  
+  const normalizedStatus = status ? status.toLowerCase().replace('-', '') : 'pending';
+
   let badgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
   let icon = <HelpCircle className="h-3.5 w-3.5 mr-1" />;
   let displayText = status;

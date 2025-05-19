@@ -76,18 +76,33 @@ const saveUserToStorage = (user: AuthResponse): void => {
 
 // Helper function to clear user from localStorage
 const clearUserFromStorage = (): void => {
+  // Save tenant slug before clearing
+  const tenantSlug = localStorage.getItem(STORAGE_KEYS.TENANT_SLUG);
+  const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
+
+  // Clear user authentication data
   localStorage.removeItem(STORAGE_KEYS.USER_ID);
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.USERNAME);
   localStorage.removeItem(STORAGE_KEYS.ROLE);
   localStorage.removeItem(STORAGE_KEYS.TENANT_ID);
   localStorage.removeItem(STORAGE_KEYS.TENANT_LABEL);
-  localStorage.removeItem(STORAGE_KEYS.TENANT_SLUG);
+  // Do NOT remove tenant slug: localStorage.removeItem(STORAGE_KEYS.TENANT_SLUG);
 
-  // Also clear from API_CONFIG keys for compatibility
+  // Clear API_CONFIG keys for compatibility except tenant slug
   localStorage.removeItem(API_CONFIG.AUTH_TOKEN_KEY);
-  localStorage.removeItem(API_CONFIG.TENANT_DETAILS_KEY);
-  localStorage.removeItem(API_CONFIG.TENANT_SLUG_KEY);
+  // Do NOT remove tenant details: localStorage.removeItem(API_CONFIG.TENANT_DETAILS_KEY);
+  // Do NOT remove tenant slug: localStorage.removeItem(API_CONFIG.TENANT_SLUG_KEY);
+
+  // Restore tenant slug and details
+  if (tenantSlug) {
+    localStorage.setItem(STORAGE_KEYS.TENANT_SLUG, tenantSlug);
+    localStorage.setItem(API_CONFIG.TENANT_SLUG_KEY, tenantSlug);
+  }
+
+  if (tenantDetails) {
+    localStorage.setItem(API_CONFIG.TENANT_DETAILS_KEY, tenantDetails);
+  }
 };
 
 // Initialize state from localStorage

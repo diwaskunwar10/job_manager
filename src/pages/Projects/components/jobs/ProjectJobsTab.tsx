@@ -1,6 +1,6 @@
 /**
  * Project Jobs Tab Component
- * 
+ *
  * Displays the jobs tab content for a project, including a list of jobs
  * with filtering and pagination.
  */
@@ -54,9 +54,10 @@ const ProjectJobsTab: React.FC<ProjectJobsTabProps> = ({ projectId, onViewJobOut
         pageSize: filter.pageSize,
         jobStatus: filter.jobStatus,
         searchQuery: filter.searchQuery,
+        selectedJobId: savedNavigation.selectedJobId, // Preserve the selected job ID
       }));
     }
-  }, [dispatch, projectId, filter]);
+  }, [dispatch, projectId, filter, savedNavigation.selectedJobId]);
 
   return (
     <div className="flex-1 overflow-hidden">

@@ -2,20 +2,26 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { API_CONFIG } from '../config/environment';
+import { useAppSelector } from '../redux/hooks';
+import { selectIsAuthenticated } from '../redux/slices/authSlice';
 
 const Index = () => {
   // Check if tenant slug exists in localStorage
-  const tenantDetails = localStorage.getItem(API_CONFIG.TENANT_DETAILS_KEY);
-  const authToken = localStorage.getItem(API_CONFIG.AUTH_TOKEN_KEY);
+  const tenantSlug = localStorage.getItem('aroma_tenant_slug') || localStorage.getItem(API_CONFIG.TENANT_SLUG_KEY);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
-  if (tenantDetails) {
-    const tenant = JSON.parse(tenantDetails);
-
-    // Always go to login page, don't automatically redirect to dashboard
-    return <Navigate to={`/${tenant.slug}/login`} replace />;
+  if (tenantSlug) {
+    // Check if user is already authenticated
+    if (isAuthenticated) {
+      // If authenticated, go directly to dashboard
+      return <Navigate to={`/${tenantSlug}/dashboard`} replace />;
+    } else {
+      // If not authenticated, go to login page
+      return <Navigate to={`/${tenantSlug}/login`} replace />;
+    }
   }
 
-  // If no tenant in localStorage, go to 404
+  // If no tenant slug in localStorage, go to 404
   return <Navigate to="/404" replace />;
 };
 

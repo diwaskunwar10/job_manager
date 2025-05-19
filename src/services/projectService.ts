@@ -61,12 +61,13 @@ export const projectService = {
     pageSize: number = 10,
     dispatch?: Dispatch<Action>
   ) => {
+    console.log(`projectService.getProjects: page=${page}, pageSize=${pageSize}`);
     return httpBase.get(
       PROJECTS.GET_PROJECTS,
       {
         params: {
           page,
-          limit: pageSize
+          limit: pageSize // API expects 'limit' parameter for page size
         }
       },
       dispatch
@@ -148,21 +149,28 @@ export const projectService = {
       createdAtEnd
     } = options || {};
 
-    return httpBase.get(
-      PROJECTS.PROJECT_JOBS(projectId),
-      {
-        params: {
-          page,
-          limit: pageSize,
-          ...(jobStatus && { status: jobStatus }),
-          ...(verified !== undefined && { verified }),
-          ...(searchQuery && { search: searchQuery }),
-          ...(createdAtStart && { created_at_start: createdAtStart }),
-          ...(createdAtEnd && { created_at_end: createdAtEnd })
-        }
-      },
-      dispatch
-    );
+    // Define required projection fields to ensure status is always included
+    const projectionFields = ['_id', 'name', 'description', 'status', 'created_at', 'executed_at', 'completed_at', 'verified'];
+
+    // Manually construct URL with multiple projection parameters
+    let url = PROJECTS.PROJECT_JOBS(projectId) + '?';
+
+    // Add page and limit parameters
+    url += `page=${page}&limit=${pageSize}`;
+
+    // Add filter parameters if they exist
+    if (jobStatus) url += `&status=${jobStatus}`;
+    if (verified !== undefined) url += `&verified=${verified}`;
+    if (searchQuery) url += `&search=${searchQuery}`;
+    if (createdAtStart) url += `&created_at_start=${createdAtStart}`;
+    if (createdAtEnd) url += `&created_at_end=${createdAtEnd}`;
+
+    // Add each projection field as a separate parameter
+    projectionFields.forEach(field => {
+      url += `&projection=${field}`;
+    });
+
+    return httpBase.get(url, undefined, dispatch);
   },
 
   // Create a job for a project

@@ -73,7 +73,7 @@ const JobOutputView: React.FC<JobOutputViewProps> = ({
         console.log('Job output response:', response);
         if (response) {
           setJobOutput(response);
-          setJobInput(response.inputs || '');
+          setJobInput(response.inputs || response.input || '');
           // Reset output index when loading new job
           setCurrentOutputIndex(0);
         } else {

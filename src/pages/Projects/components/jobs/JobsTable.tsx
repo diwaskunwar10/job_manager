@@ -27,7 +27,16 @@ const JobsTable: React.FC<JobsTableProps> = ({
   };
 
   // Render status badge
-  const renderStatusBadge = (status: string) => {
+  const renderStatusBadge = (status?: string) => {
+    // Default to 'pending' if status is undefined
+    if (!status) {
+      return (
+        <Badge variant="warning" className="capitalize">
+          pending
+        </Badge>
+      );
+    }
+
     let variant = "default";
 
     switch (status.toLowerCase()) {
@@ -100,7 +109,7 @@ const JobsTable: React.FC<JobsTableProps> = ({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <JobActions 
+                <JobActions
                   job={job}
                   onExecuteJob={onExecuteJob}
                   onReExecuteJob={onReExecuteJob}

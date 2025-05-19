@@ -8,12 +8,13 @@ import { httpBase } from '@/utils/httpBase';
 import { JOBS } from '@/constants/apiEndpoints';
 import JobStatusBadge from './JobStatusBadge';
 import AddMediaDialog from './AddMediaDialog';
-import { CalendarIcon, Clock, User, FileText, Play, Upload, PlusCircle } from 'lucide-react';
+import { CalendarIcon, Clock, User, FileText, Play, Upload, PlusCircle, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface JobDetailViewProps {
   jobId: string;
   onExecute?: () => void;
+  onViewOutput?: (jobId: string, jobName: string) => void;
 }
 
 interface JobDetail {
@@ -32,7 +33,7 @@ interface JobDetail {
   project_id: string;
 }
 
-const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute }) => {
+const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute, onViewOutput }) => {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -45,8 +46,31 @@ const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute }) => {
 
       setIsLoading(true);
       try {
+        console.log('Fetching job details for ID:', jobId);
+
+        // Use the jobService instead of direct httpBase call
         const response = await httpBase.get(JOBS.GET_JOB_BY_ID(jobId));
-        setJob(response);
+        console.log('Job details response:', response);
+
+        // Handle different response formats
+        let jobData = response;
+
+        // If response is wrapped in a data property
+        if (response && response.data && response.data._id) {
+          jobData = response.data;
+        }
+
+        // Check if jobData is valid
+        if (jobData && jobData._id) {
+          setJob(jobData);
+        } else {
+          console.error('Invalid job response format:', response);
+          toast({
+            title: 'Error',
+            description: 'Invalid job data received. Please try again.',
+            variant: 'destructive',
+          });
+        }
       } catch (error) {
         console.error('Error fetching job details:', error);
         toast({
@@ -75,8 +99,18 @@ const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute }) => {
       });
 
       // Refresh job details
-      const updatedJob = await httpBase.get(JOBS.GET_JOB_BY_ID(jobId));
-      setJob(updatedJob);
+      try {
+        const updatedJob = await httpBase.get(JOBS.GET_JOB_BY_ID(jobId));
+        console.log('Updated job after execution:', updatedJob);
+
+        if (updatedJob && updatedJob._id) {
+          setJob(updatedJob);
+        } else {
+          console.error('Invalid job data after execution:', updatedJob);
+        }
+      } catch (refreshError) {
+        console.error('Error refreshing job details after execution:', refreshError);
+      }
 
       if (onExecute) {
         onExecute();
@@ -96,15 +130,32 @@ const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute }) => {
   const handleMediaAdded = async () => {
     // Refresh job details after media is added
     try {
+      console.log('Refreshing job details after media added for ID:', jobId);
       const updatedJob = await httpBase.get(JOBS.GET_JOB_BY_ID(jobId));
-      setJob(updatedJob);
+      console.log('Updated job after media added:', updatedJob);
 
-      toast({
-        title: 'Media Added',
-        description: 'Media has been successfully added to the job.',
-      });
+      if (updatedJob && updatedJob._id) {
+        setJob(updatedJob);
+
+        toast({
+          title: 'Media Added',
+          description: 'Media has been successfully added to the job.',
+        });
+      } else {
+        console.error('Invalid job data after media added:', updatedJob);
+        toast({
+          title: 'Warning',
+          description: 'Media was added but job details could not be refreshed.',
+          variant: 'warning',
+        });
+      }
     } catch (error) {
-      console.error('Error refreshing job details:', error);
+      console.error('Error refreshing job details after media added:', error);
+      toast({
+        title: 'Warning',
+        description: 'Media was added but job details could not be refreshed.',
+        variant: 'warning',
+      });
     }
   };
 
@@ -127,8 +178,50 @@ const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute }) => {
     return (
       <Card>
         <CardContent className="py-10">
-          <div className="text-center text-muted-foreground">
-            Job details not found
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="text-center text-muted-foreground">
+              Job details not found
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                // Try to fetch job details again
+                const fetchJobDetails = async () => {
+                  if (!jobId) return;
+
+                  setIsLoading(true);
+                  try {
+                    const response = await httpBase.get(JOBS.GET_JOB_BY_ID(jobId));
+                    if (response && response._id) {
+                      setJob(response);
+                      toast({
+                        title: 'Success',
+                        description: 'Job details loaded successfully.',
+                      });
+                    } else {
+                      toast({
+                        title: 'Error',
+                        description: 'Could not load job details. Invalid data received.',
+                        variant: 'destructive',
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error retrying job details fetch:', error);
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to load job details. Please try again.',
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                };
+
+                fetchJobDetails();
+              }}
+            >
+              Retry Loading Job Details
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -207,6 +300,17 @@ const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onExecute }) => {
             <Upload className="h-4 w-4 mr-2" />
             Add Files
           </Button>
+
+          {onViewOutput && (
+            <Button
+              onClick={() => onViewOutput(jobId, job.name)}
+              variant="outline"
+              className="w-full"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              View Output
+            </Button>
+          )}
         </div>
 
         <AddMediaDialog

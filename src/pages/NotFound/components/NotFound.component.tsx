@@ -1,48 +1,15 @@
+import React from 'react';
 
-import React, { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+interface NotFoundComponentProps {
+  onGoBack: () => void;
+}
 
-const NotFoundPage: React.FC = () => {
-  const navigate = useNavigate();
-  let state = { tenant: null, isAuthenticated: false };
-  
-  try {
-    // Try to get context, but don't crash if not available
-    const context = useAppContext();
-    state = context.state;
-  } catch (error) {
-    console.error("Context not available:", error);
-  }
-
-  // Animation effect on mount
-  useEffect(() => {
-    const elements = document.querySelectorAll('.animate-on-mount');
-    elements.forEach((el, i) => {
-      if (el instanceof HTMLElement) {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-          el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-          el.style.opacity = '1';
-          el.style.transform = 'translateY(0)';
-        }, 100 * i);
-      }
-    });
-  }, []);
-  
-  const handleGoBack = () => {
-    if (state.tenant?.slug) {
-      if (state.isAuthenticated) {
-        navigate(`/${state.tenant.slug}/dashboard`);
-      } else {
-        navigate(`/${state.tenant.slug}/login`);
-      }
-    } else {
-      navigate('/');
-    }
-  };
-  
+/**
+ * NotFound Component
+ * 
+ * This component renders the 404 Not Found UI.
+ */
+const NotFoundComponent: React.FC<NotFoundComponentProps> = ({ onGoBack }) => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 overflow-hidden">
       <div className="relative w-full max-w-lg px-4">
@@ -61,7 +28,7 @@ const NotFoundPage: React.FC = () => {
             
             <div className="mt-8 animate-on-mount">
               <button
-                onClick={handleGoBack}
+                onClick={onGoBack}
                 className="px-6 py-3 text-white bg-brand-600 rounded-md hover:bg-brand-700 transition-colors"
               >
                 Go Back
@@ -155,4 +122,4 @@ const NotFoundPage: React.FC = () => {
   );
 };
 
-export default NotFoundPage;
+export default NotFoundComponent;

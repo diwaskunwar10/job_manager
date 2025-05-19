@@ -55,6 +55,13 @@ const ProjectsContainer: React.FC = () => {
     console.log(`ProjectsContainer: Changing page size from ${pageSize} to ${size}`);
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
+
+    // Force a refresh of the projects list with the new page size
+    // This is needed because the useEffect in useProjects might not trigger
+    // if only pageSize changes but the dependency array doesn't catch it
+    setTimeout(() => {
+      fetchProjects();
+    }, 0);
   };
 
   // Handle project selection

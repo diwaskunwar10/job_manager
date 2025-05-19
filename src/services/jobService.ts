@@ -61,7 +61,7 @@ const JobService = {
   },
 
   /**
-   * Get job output by ID
+   * Get job output by ID (Aroma Backend v2)
    * @param {string} jobId - Job ID
    * @param {Dispatch<Action>} dispatch - Optional dispatch function for state updates
    * @returns {Promise<JobOutput>} - Promise with job output
@@ -72,6 +72,23 @@ const JobService = {
   ): Promise<JobOutput> => {
     return http.get(
       JOBS.JOB_OUTPUT(jobId),
+      undefined,
+      dispatch
+    );
+  },
+
+  /**
+   * Get media content by ID (Aroma Backend v2)
+   * @param {string} mediaId - Media ID (input_id or output_id)
+   * @param {Dispatch<Action>} dispatch - Optional dispatch function for state updates
+   * @returns {Promise<MediaContent>} - Promise with media content
+   */
+  getMediaContent: (
+    mediaId: string,
+    dispatch?: Dispatch<Action>
+  ): Promise<any> => {
+    return http.get(
+      JOBS.MEDIA_CONTENT(mediaId),
       undefined,
       dispatch
     );
@@ -187,6 +204,7 @@ const JobService = {
    * @param {number} page - Page number
    * @param {number} pageSize - Number of items per page
    * @param {Object} filters - Optional filters
+   * @param {string[]} projection - Fields to include in the response
    * @param {Dispatch<Action>} dispatch - Optional dispatch function for state updates
    * @returns {Promise<{data: Job[], meta: any}>} - Promise with jobs data
    */
@@ -195,19 +213,33 @@ const JobService = {
     page = 1,
     pageSize = 10,
     filters = {},
+    projection = ["_id", "name", "description", "status", "process_name", "created_at", "created_by", "verified"],
     dispatch?: Dispatch<Action>
-  ): Promise<{data: Job[], meta: any}> => {
-    return http.get(
-      PROJECTS.PROJECT_JOBS(projectId),
-      {
-        params: {
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          ...filters
-        }
-      },
-      dispatch
-    );
+  ): Promise<{ data: Job[]; meta: any }> => {
+    // Ensure status is always included in projection
+    if (!projection.includes("status")) {
+      projection.push("status");
+    }
+
+    // We need to manually construct the URL with multiple projection parameters
+    let url = PROJECTS.PROJECT_JOBS(projectId) + '?';
+
+    // Add page and limit parameters
+    url += `page=${page}&limit=${pageSize}`;
+
+    // Add other filters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url += `&${key}=${value}`;
+      }
+    });
+
+    // Add each projection field as a separate parameter
+    projection.forEach(field => {
+      url += `&projection=${field}`;
+    });
+
+    return http.get(url, undefined, dispatch);
   },
 
   /**

@@ -1,80 +1,62 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { Job } from '@/services/projectService';
+import { RefreshCw, FileText, Plus } from 'lucide-react';
 
 interface JobActionsProps {
-  job: Job;
-  onExecuteJob: (jobId: string) => void;
+  job: {
+    _id: string;
+    name: string;
+    status: string;
+  };
   onReExecuteJob: (jobId: string) => void;
   onViewJobOutput: (jobId: string, jobName: string) => void;
+  onAddFiles?: (jobId: string) => void;
 }
 
 const JobActions: React.FC<JobActionsProps> = ({
   job,
-  onExecuteJob,
   onReExecuteJob,
-  onViewJobOutput
+  onViewJobOutput,
+  onAddFiles
 }) => {
   return (
-    <div className="flex space-x-2">
-      {job.status.toLowerCase() === 'pending' && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center space-x-1"
-          onClick={() => onExecuteJob(job._id)}
-        >
-          <Play className="h-3 w-3" />
-          <span>Execute</span>
-        </Button>
-      )}
-      {job.status.toLowerCase() === 'in-progress' && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center space-x-1"
-          disabled
-        >
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Running</span>
-        </Button>
-      )}
+    <div className="flex items-center justify-end space-x-2">
+      {/* Re-execute button only for completed or failed jobs */}
       {(job.status.toLowerCase() === 'completed' || job.status.toLowerCase() === 'failed') && (
-        <div className="flex space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex items-center space-x-1"
-            onClick={() => onReExecuteJob(job._id)}
-          >
-            <RefreshCw className="h-3 w-3" />
-            <span>Re-execute</span>
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex items-center space-x-1"
-            onClick={() => onViewJobOutput(job._id, job.name)}
-          >
-            <FileText className="h-3 w-3" />
-            <span>View Output</span>
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex items-center space-x-1"
+          onClick={() => onReExecuteJob(job._id)}
+        >
+          <RefreshCw className="h-3 w-3" />
+          <span>Re-execute</span>
+        </Button>
       )}
 
-      {/* View Output button for all other job statuses */}
-      {!['completed', 'failed'].includes(job.status.toLowerCase()) && (
+      {/* Add Files button */}
+      {onAddFiles && (
         <Button
           size="sm"
           variant="outline"
           className="flex items-center space-x-1"
-          onClick={() => onViewJobOutput(job._id, job.name)}
+          onClick={() => onAddFiles(job._id)}
         >
-          <FileText className="h-3 w-3" />
-          <span>View Output</span>
+          <Plus className="h-3 w-3" />
+          <span>Add Files</span>
         </Button>
       )}
+
+      {/* View Output button - always visible */}
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex items-center space-x-1"
+        onClick={() => onViewJobOutput(job._id, job.name)}
+      >
+        <FileText className="h-3 w-3" />
+        <span>View Output</span>
+      </Button>
     </div>
   );
 };

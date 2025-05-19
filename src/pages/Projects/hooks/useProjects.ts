@@ -26,7 +26,7 @@ export const useProjects = (
   const [meta, setMeta] = useState<ProjectsMeta>({
     total: 0,
     page: 1,
-    pageSize: 10,
+    pageSize: pageSize, // Use the pageSize parameter from props
     totalPages: 1
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +66,9 @@ export const useProjects = (
       setMeta({
         total: apiMeta.total || 0,
         page: apiMeta.page || 1,
-        pageSize: apiMeta.page_size || 10,
+        // Use the pageSize from the parameter instead of the API response
+        // This ensures the UI stays in sync with the requested page size
+        pageSize: pageSize,
         totalPages: apiMeta.total_pages || 1
       });
 
@@ -139,14 +141,24 @@ export const useProjects = (
     // Check if page or pageSize has changed
     const prevPagination = prevPaginationRef.current;
     if (prevPagination.page !== page || prevPagination.pageSize !== pageSize) {
+      console.log(`useProjects: Pagination changed - page: ${page}, pageSize: ${pageSize}`);
       fetchProjects();
       // Update the ref with current values
       prevPaginationRef.current = { page, pageSize };
     } else if (!projects.length) {
       // Initial load if no projects are loaded yet
+      console.log(`useProjects: Initial load - page: ${page}, pageSize: ${pageSize}`);
       fetchProjects();
     }
   }, [page, pageSize, fetchProjects, projects.length]);
+
+  // Update meta state when pageSize changes
+  useEffect(() => {
+    setMeta(prevMeta => ({
+      ...prevMeta,
+      pageSize: pageSize
+    }));
+  }, [pageSize]);
 
   return {
     projects,

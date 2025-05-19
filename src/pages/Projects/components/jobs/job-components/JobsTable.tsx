@@ -38,7 +38,16 @@ const JobsTable: React.FC<JobsTableProps> = ({
   };
 
   // Render status badge
-  const renderStatusBadge = (status: string) => {
+  const renderStatusBadge = (status?: string) => {
+    // Default to 'pending' if status is undefined
+    if (!status) {
+      return (
+        <Badge variant="warning" className="capitalize">
+          pending
+        </Badge>
+      );
+    }
+
     let variant = "default";
 
     switch (status.toLowerCase()) {
@@ -89,6 +98,7 @@ const JobsTable: React.FC<JobsTableProps> = ({
           {jobs?.map((job) => (
             <tr
               key={job._id}
+              id={`job-row-${job._id}`}
               className={`hover:bg-gray-50/70 transition-colors cursor-pointer ${selectedJobId === job._id ? 'bg-blue-50' : ''}`}
               onClick={() => onJobSelect && onJobSelect(job._id)}
             >

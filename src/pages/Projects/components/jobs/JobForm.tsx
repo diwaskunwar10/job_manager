@@ -114,9 +114,18 @@ const JobForm: React.FC<JobFormProps> = ({
     if (!mediaUri) return true; // Return success if no media URI
 
     try {
+      // Create FormData for multipart/form-data request
+      const formData = new FormData();
+      formData.append('media_uris', mediaUri);
+
       await httpBase.post(
-        JOBS.ADD_MEDIA_FROM_URI(jobId),
-        { media_uris: [mediaUri] }
+        JOBS.ADD_MEDIA(jobId),
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
 
       console.log(`Successfully added media from ${mediaUri} to job ${jobId}`);

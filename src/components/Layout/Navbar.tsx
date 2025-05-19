@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import {
   LayoutDashboard,
@@ -15,8 +15,9 @@ import {
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
-  const { state, logoutUser } = useAppContext();
+  const { state } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -48,11 +49,6 @@ const Navbar: React.FC = () => {
       name: 'Projects',
       path: `/${state.tenant.slug}/projects`,
       icon: <FolderKanban className="w-5 h-5" />
-    },
-    {
-      name: 'Assigned Jobs',
-      path: `/${state.tenant.slug}/jobs`,
-      icon: <ClipboardList className="w-5 h-5" />
     },
     {
       name: 'User Management',
@@ -93,7 +89,7 @@ const Navbar: React.FC = () => {
       >
         {/* Top section - Project info */}
         <div className="p-5 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-lg">
               {state.tenant.name.charAt(0)}
             </div>
@@ -103,7 +99,7 @@ const Navbar: React.FC = () => {
                 <p className="text-xs text-gray-500">{state.tenant.slug}</p>
               </div>
             )}
-          </div>
+          </Link>
         </div>
 
         {/* Navigation items */}
@@ -131,7 +127,7 @@ const Navbar: React.FC = () => {
         {/* Logout button */}
         <div className="p-4 border-t border-gray-200">
           <button
-            onClick={logoutUser}
+            onClick={() => navigate(`/${state.tenant.slug}/logout`)}
             className={`flex ${isCollapsed ? 'justify-center w-auto' : 'w-full'} items-center ${isCollapsed ? '' : 'px-4'} py-2 text-sm font-medium text-red-600 rounded-md hover:bg-red-50 transition-colors`}
             title={isCollapsed ? 'Logout' : ''}
           >

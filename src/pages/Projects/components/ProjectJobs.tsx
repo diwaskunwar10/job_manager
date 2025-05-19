@@ -117,7 +117,7 @@ const ProjectJobs: React.FC<ProjectJobsProps> = ({
       .then((response) => {
         console.log('Job output response:', response);
         if (response.data) {
-          setJobOutput(response.data.putput || 'No output available');
+          setJobOutput(response.data.output || 'No output available');
           setJobInput(response.data.input || '');
         } else {
           setJobOutput('No output available');

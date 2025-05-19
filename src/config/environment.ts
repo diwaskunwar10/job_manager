@@ -1,9 +1,9 @@
 
 // Environment configuration
 export const API_CONFIG = {
-  // Base URL is now handled by the Vite proxy configuration
-  // The proxy will forward requests to http://127.0.0.1:8000/v1
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || '/v1',
+  // Use the API URL directly from environment variables
+  // Ensure it includes the /v1 prefix
+  BASE_URL: import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/v1` : 'https://aroma-api.nextai.asia/v1',
 
   // Updated auth token key
   AUTH_TOKEN_KEY: 'aroma_auth_token',

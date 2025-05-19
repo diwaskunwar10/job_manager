@@ -3,6 +3,9 @@ import React, { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAppSelector } from '../redux/hooks';
+import { selectIsAuthenticated } from '../redux/slices/authSlice';
+import { API_CONFIG } from '../config/environment';
 
 const TenantSlugPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -10,15 +13,30 @@ const TenantSlugPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const apiCallMadeRef = useRef(false);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   useEffect(() => {
     const initializeTenant = async () => {
       // Only proceed if we haven't made an API call yet
       if (apiCallMadeRef.current) return;
 
-      // If no slug provided, immediately redirect to 404
+      // Check if we're at the root route
       if (!slug) {
-        navigate('/404');
+        // Check if tenant slug exists in localStorage
+        const tenantSlug = localStorage.getItem('aroma_tenant_slug') || localStorage.getItem(API_CONFIG.TENANT_SLUG_KEY);
+
+        if (!tenantSlug) {
+          // No tenant slug found, redirect to 404
+          navigate('/404');
+          return;
+        }
+
+        // Tenant slug exists, redirect to dashboard or login
+        if (isAuthenticated) {
+          navigate(`/${tenantSlug}/dashboard`);
+        } else {
+          navigate(`/${tenantSlug}/login`);
+        }
         return;
       }
 
@@ -28,8 +46,14 @@ const TenantSlugPage: React.FC = () => {
         const exists = await checkTenantExists(slug);
 
         if (exists) {
-          // Always go to login page, don't automatically redirect to dashboard
-          navigate(`/${slug}/login`);
+          // Check if user is already authenticated
+          if (isAuthenticated) {
+            // If authenticated, go directly to dashboard
+            navigate(`/${slug}/dashboard`);
+          } else {
+            // If not authenticated, go to login page
+            navigate(`/${slug}/login`);
+          }
         } else {
           toast({
             title: "Invalid Tenant",
@@ -45,7 +69,7 @@ const TenantSlugPage: React.FC = () => {
     };
 
     initializeTenant();
-  }, []);  // Empty dependency array to run only once
+  }, [isAuthenticated]);  // Include isAuthenticated in dependencies
 
   return (
     <div className="flex items-center justify-center h-screen">

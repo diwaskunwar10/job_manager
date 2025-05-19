@@ -81,7 +81,25 @@ The module interacts with the following API endpoints:
 - PUT /projects/{id} - Update a project
 - DELETE /projects/{id} - Delete a project
 - GET /projects/{id}/jobs - Fetch jobs for a project
-- POST /projects/{id}/jobs - Create a new job
+- POST getJobsByProject: (
+  projectId: string,
+  page = 1,
+  pageSize = 10,
+  filters = {},
+  dispatch?: Dispatch<Action>
+): Promise<{ data: Job[]; meta: any }> => {
+  return http.get(
+    PROJECTS.PROJECT_JOBS(projectId),
+    {
+      params: {
+        page: page.toString(),
+        limit: pageSize.toString(),
+        ...filters,
+      },
+    },
+    dispatch
+  );
+}, - Create a new job
 - GET /jobs/output/{id} - Fetch job output
 
 ## State Management
